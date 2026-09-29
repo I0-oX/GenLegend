@@ -60,7 +60,7 @@ Scale, for the record: about 350 `Feature(...)`, 354 `Entry(...)`, 284 `chips=` 
 | 5 | **Background** | *Background* and *Hook* as two Entries; Origin Feats. | Background features. |
 | 6 | **Feats** | General Feats, Fighting Styles, Epic Boons, Invocations. | Their `Feature` objects. |
 | 7 | **Proficiencies** | Skills, tools, armour and weapon lines read from Tags. | The `Unarmed_*` skill bridge (QST-0093.12 question 4). |
-| 8 | **Progression** | Level-ups, Ability Score Improvements, hit points as Tags. | `Map_of_Classes`, `Codex_of_Progression`, `Grimoire_of_Features` (with QST-0093.7). |
+| 8 | **Progression** | Level-ups, Ability Score Improvements, hit points as Tags. A live level-up must top up choices that grow with level: since station 3, Weapon Masteries are planned once when the Training is gained, and nothing re-plans them on a level-up (today the level button regenerates the Character, so no sheet is short; review of #97). | `Map_of_Classes`, `Codex_of_Progression`, `Grimoire_of_Features` (with QST-0093.7). |
 | 9 | **Magic** | Spellcasting, focus, spells section. | The old spell `Entry` use. |
 | 9b | **Combatant** | The fighting archetypes (Blade-and-Board, Hard-Hitter, Infiltrator, Tank, Magician, Spellsword…). Chosen after the Guild; Styles, Feats, Pact and Masteries follow it; the weapon is drawn at random from the overlap of every filter. The gates + weights matrix. | The per-Guild hand-written weapon picks. |
 | 10 | **Inventarium** | `char.inventarium`, `Map_of_Wearing`, grips (hands in pairs), attunement 3, rings 10, focus slot, the chosen print layout. | `char.belongings` and `Loadout`'s hand-written slots. |
@@ -81,7 +81,7 @@ Every difference in the fingerprint or the snapshot must be named in the PR as i
 
 Open as of 2026-09-24:
 
-1. **Hands policy** (station 10): 1 Shield first, 2 Weapon first, or 3 By build? See the mock-up page "The Inventarium".
+1. **Hands policy — RULED (Julio, 2026-09-28): by build.** The Combatant decides the hands: Blade-and-Board wants weapon + Shield, Hard-Hitter wants both hands on one weapon, Magician keeps a hand for the focus. The Affinity machine encodes it; no separate policy exists.
 2. **Inventarium layout** (station 10): A ledger, B paper doll, C armed / worn / packed, or a mix?
 3. **Focus by tool proficiency** (station 10): keep the proposed table as the rule?
 4. **Spells' metadata line** (station 1 moves it, station 9 designs it). Today a spell's `Entry` carries its school and casting time in the `description` field. Station 1 moves that line to `flavor` so the sheet does not change. Should station 9 give spells their own card shape?
@@ -91,10 +91,15 @@ Open as of 2026-09-24:
    - **Everything learnable starts at 0.5**, the no-opinion prior.
    - **Each feature is a witness, not a manager.** Its module declares only its own opinion table, option → opinion in [0,1]; silence is 0.5. This is the modularity Julio's matrices asked for: no god object, the combiner never knows which features exist.
    - **Opinions combine by Bayes' rule**: multiply the odds, `odds(a) = a / (1 − a)`, then back to an affinity. In log-odds space this is plain addition — "add or subtract" and "a matrix per feature" were the same answer. A pure 1 is as absorbing as a pure 0, so 1 is reserved for grants; enthusiasm caps near 0.9.
-   - **The draw**: keep options at affinity ≥ 0.5; none pass → halve the threshold (0.25, 0.125, …) until a non-zero option passes. All zero is a loud, named error. Among the passers the **Character's own dice** draw, weighted by affinity (default; Julio may rule uniform-above-threshold instead).
+   - **The draw**: keep options at affinity ≥ 0.5; none pass → halve the threshold (0.25, 0.125, …) until a non-zero option passes. All zero is a loud, named error. Among the passers the **Character's own dice** draw, **weighted by affinity** (RULED, Julio, 2026-09-28): an option at 0.9 is drawn more often than one at 0.55.
    - **When**: at creation, in **tagging order** (Julio, 2026-09-28) — a choice is drawn when the Tag that forces it applies; the weapon draw happens at outfitting, after every witness Tag is in place. Printing never draws (Decree 0009, point 7).
+   - **Refined the same day — two verbs, two operations (Julio):** *"Knowing would be additions to the weapon vector ((a+b)/2 or a max operation) and wanting a bayesian update… the fact 1 is absorbing can also be used in favor… it could keep a weapon inside the choices or crunch other rules (pact weapons not needing proficiency?)."* Settled form:
+     - **Knowing = `max`** (chosen over the average: averaging can forget — learning a weapon a second time, worse, must not lower it; max is monotone and idempotent, the same law as re-applying an active Tag). Knowing **can lift a 0**: Pact of the Blade simply *knows* the blade into the pool, no proficiency needed — the rule is crunched by the operation, not by an exception.
+     - **Wanting = Bayes**, applied after knowing. Here 0 stays 0 and 1 stays 1 — and a 1 works *in favor*: affinities are independent beliefs, not a shared distribution, so a 1 pins its option into the pool without silencing the others; the draw still chooses among every passer.
+     - Both folds are commutative, so **the affinities do not depend on the order the Tags were applied**; nothing is stored, the vector is computed at draw time (pure). Tagging order decides only which dice are consumed when.
+     - **The math is a hidden layer** (Julio): Tags speak verbs — `Knows`, `Wants`, `Shuns`, `Grants` — with named strengths behind them; only the kit does odds arithmetic. A feature author writes a sentence, never a formula.
 6. **Spells — RULED (Julio, 2026-09-28): one global known-set per Character.** The same vocabulary as the weapons: a feature **allows** spells (affinity above 0 in the pool) or **grants** them (fixed, outside the draw). Grants resolve first; every pick draws from allowed minus already known, so a granted spell never wastes a pick — whichever feature is picking (a domain grant removes the spell from a later feat's picks too). Never a duplicate on the sheet.
-7. **Station 3's dice — RULED (Julio, 2026-09-28): accept the changed draws.** Making the readers pure moves dice rolls from print time to creation time, and 56 of the 273 grid Characters draw a different (equally legal) style or spell. Julio accepted the changes; each is named in the station's PR. No compatibility shim.
+7. **Station 3's dice — RULED (Julio, 2026-09-28): accept the changed draws.** Making the readers pure moves dice rolls from print time to creation time, and 69 of the 273 grid Characters read differently (18 Paladins and 18 Rangers draw another style or ability, 21 Wizards other spells, 6 Draconic Sorcerers show the Scaled AC chip they always deserved, 6 Fighters shift a mastery draw) — all equally legal. Julio accepted the changes; each sheet is named in the station's PR. No compatibility shim.
 
 ## 🛠️ Station 1, the foundation (branch `julio_cl/qst-0142-foundation`)
 
