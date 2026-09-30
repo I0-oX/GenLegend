@@ -2,7 +2,7 @@
 
 - **Type:** infrastructure · deployment
 - **Priority:** 🟡 medium
-- **Status:** Working — config landed, first Vercel deploy unproven (needs Julio's account)
+- **Status:** Done — deployed, `https://gen-legend.vercel.app` serves the generator (2026-09-30)
 - **Owner:** unclaimed
 - **Route to:** Infrastructure (Artificer) · Simplicity (Monk)
 - **Related:** Decree 0009 · QST-0090 (one `main`) · `README.md` Deploy
@@ -82,11 +82,29 @@ The exclude list was checked against the code: no runtime module imports
 `AtlasWorldBuild`, and no module reads a `.md` at runtime. `scripts/verify_aasimar_page.py`
 reads `Documenta/Canon/Mythos/Aasimar.md`, and it is a proof script, not the app.
 
+## 🌍 Result
+
+The project is connected and live: `https://gen-legend.vercel.app` serves the
+generator (2026-09-30). The unproven parts of section 4 — that a real Vercel
+project accepts the bundle, and that the WebSocket at `/websocket/` comes up —
+are now answered by a live deployment, not by inference.
+
+This checkout cannot reach the host to double-check it: DNS resolves
+(`216.198.79.3`, `64.29.17.3`) but both edge IPs time out from here, so the
+live check is the browser's, not this machine's.
+
+**Nothing so far involves Julio.** The connection, the build and the report are
+the repo owner's. Julio's one possible act here is adding a custom domain to
+the Vercel project — Settings → Domains — if `genlegend.eu` is ever to be
+served from Vercel instead of Cloud Run. He can do that whenever he wants; no
+code waits on it.
+
 ## 🧭 Left open
 
-- **No account, no deploy.** Everything above is verified locally against
-  Vercel's own builder code and a live uvicorn boot. Whether a real Vercel
-  project accepts the bundle, and whether Shiny survives a Fluid Compute
-  recycle mid-session, is Julio's to find out by connecting the repository.
-- **WebSockets must be enabled** on the Vercel project, or the generator loads
-  and never reacts. That is the one setting with no code behind it.
+- **Session survival across a Fluid Compute recycle.** The generator holds
+  session state in memory and one WebSocket. Whether a recycled instance drops
+  a live sheet mid-generation, or Shiny's reconnect covers it, was not tested
+  and no evidence exists either way.
+- Cloud Run is untouched: `Dockerfile`, `prove-and-publish.yml` and the
+  `genlegend.eu` service still publish from `main`. Which host the domain
+  should point at is a separate call, and no deploy files were deleted.
