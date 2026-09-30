@@ -343,26 +343,22 @@ def mount_page(
     def apply_home_defaults(
             parameters,
             ):
-        ui.update_select(
-                "char_species",
-                selected=selected_or_random(
+        client.send(
+                "forge_home_selections",
+                {
+                    "species": selected_or_random(
                         parameters.get("species"),
                         valid_species,
                         ),
-                )
-        ui.update_select(
-                "char_class",
-                selected=selected_or_random(
+                    "classes": selected_or_random(
                         parameters.get("char_class"),
                         valid_guilds,
                         ),
-                )
-        ui.update_select(
-                "char_background",
-                selected=selected_or_random(
+                    "backgrounds": selected_or_random(
                         parameters.get("background"),
                         valid_backgrounds,
                         ),
+                    },
                 )
         apply_sheet_defaults(parameters)
 

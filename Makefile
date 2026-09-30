@@ -2,7 +2,8 @@
 #   make run            serve app.main:app on $(PORT)      make dev   the same, reloading on edits
 #   make smoke-player   boot and generate seed 42           make replay-player   the seeded-replay rite
 #   make sweep-player   every Guild at levels 1 and 5 (add WIDE=1 for every level, Species, Background, Specialization)
-.PHONY: run dev setup smoke-player sweep-player replay-player verify-aasimar safepoint install-hooks loss-check
+#   make slab           recompile the Home generator face (pinned slab CLI)   make slab-check  prove the committed build is in sync
+.PHONY: run dev setup smoke-player sweep-player replay-player verify-aasimar safepoint install-hooks loss-check slab slab-check
 
 PORT ?= 8080
 VENV := .venv
@@ -61,3 +62,26 @@ install-hooks:
 
 loss-check:
 	$(VENV_PYTHON) scripts/loss_detector.py --staged
+
+# --- slab ------------------------------------------------------------------
+# The Home generator face is authored in app/slab/forge.slab and compiled with
+# a PINNED CLI: slab is pre-alpha and its language and kernel change without
+# notice, so an upgrade is a deliberate edit of SLAB_VERSION followed by
+# `make slab` + `make smoke-player`. The generated module and kernel WASM are
+# committed under app/static/slab/, so no deploy (Cloud Run, Vercel, Actions)
+# ever builds them. Needs `bun` on the machine that regenerates.
+SLAB_VERSION := 0.1.0
+SLAB := bunx @stencil-hq/slab@$(SLAB_VERSION)
+SLAB_SRC := app/slab/forge.slab
+SLAB_OUT := app/static/slab
+SLAB_TAG := gl-forge
+
+slab:
+	$(SLAB) check $(SLAB_SRC)
+	$(SLAB) gen wc $(SLAB_SRC) -o $(SLAB_OUT) --tag $(SLAB_TAG)
+
+slab-check:
+	@tmp=$$(mktemp -d); \
+	$(SLAB) gen wc $(SLAB_SRC) -o $$tmp --tag $(SLAB_TAG) >/dev/null && \
+	diff -r $(SLAB_OUT) $$tmp && echo "slab build is in sync with $(SLAB_SRC)"; \
+	status=$$?; rm -rf $$tmp; exit $$status

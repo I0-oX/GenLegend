@@ -22,6 +22,10 @@ make smoke-player
 
 Boot and generate seed 42. `make replay-player` proves a seeded request replays exactly; `make sweep-player` builds every Guild at levels 1 and 5 (`WIDE=1` builds every level, Species, Background and Specialization and renders every sheet, about nine minutes). The pre-push hook runs the smoke.
 
+## Slab face
+
+The Home generator face is a [slab](https://github.com/stencil-hq/slab) document: `app/slab/forge.slab` compiles to the web component in `app/static/slab/` plus its fonts in `app/static/fonts/`, all committed so no deploy builds anything. To change the face, edit the `.slab` and run `make slab` (pinned CLI, needs `bun`), then `make smoke-player`; `make slab-check` fails when the committed build drifts from the source. slab owns everything inside the element — layout, type, states — so there is no CSS for it beyond the `.forge-host` wrapper in `app/static/style.css`. `app/static/js/slab-forge.js` is the only seam: it feeds choices in and pushes the picks back as the `char_species` / `char_class` / `char_background` / `btn_gen_char` inputs the server already reads.
+
 ## One line: `main`
 
 `origin/main` on GitHub is the product. There is no other remote branch. Local `main` tracks it and is never force-moved (Decree 0008).

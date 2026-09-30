@@ -1,0 +1,124 @@
+// Gen Legend — Character Generator face for the Home tablet.
+// Compiled with @stencil-hq/slab@0.1.0 → app/static/slab/forge.*  (`make slab`)
+// Three option columns, one filter, one generate action. Everything the server
+// needs still arrives as the Shiny inputs char_species / char_class /
+// char_background / btn_gen_char — this file only paints and signals.
+// Faces are registered by the bridge from app/static/fonts/ (OFL):
+// Cinzel for chrome, Eagle Lake for the choices — the same face the old
+// fantasy-select dropdowns fell back to.
+
+tokens {
+  color {
+    parchment  #F7EBD3   // card face, the tablet's warm cream
+    gold       #D4AF37   // --gold-color: outlines, dots, scrollbars
+    goldDeep   #A8801F
+    line       #C9A94C   // card borders
+    ink        #120C05   // wells and dropdown bodies (the old black selects)
+    inkHover   #241A0C   // option hover
+    inkPicked  #3E2F14   // option selected well
+    cream      #F5E7C6   // text on ink
+    creamDim   #C9B48A   // counts and hints on ink
+    blood      #AA0A12   // --primary-color
+    bloodDeep  #7E0710
+    paper      #FFF6E4   // button label
+    muted      #8A7550   // meta on parchment
+  }
+  text {
+    label  { family "Cinzel"; size 12; weight 700; tracking 2.4 }
+    opt    { family "Eagle Lake"; size 15; weight 400 }
+    meta   { family "Cinzel"; size 11; weight 700; tracking 1.4 }
+    field  { family "Eagle Lake"; size 14; weight 400 }
+    button { family "Cinzel"; size 17; weight 700; tracking 2.6 }
+    hint   { family "Cinzel"; size 11; weight 700; tracking 1.4 }
+  }
+  fx {
+    card  { bg #F7EBD3; stroke #C9A94C; stroke-w 2; radius 14 }
+    well  { bg #120C05; radius 10 }
+    field { bg #120C05; stroke #D4AF37; stroke-w 1.5; radius 8 }
+    button { bg linear(180, #C8121B 0%, #8A060D 100%); stroke #D4AF37; stroke-w 2; radius 12 }
+  }
+  shadow {
+    card 0,4,12,#00000033
+    well inset,0,2,6,#00000080
+    lift 0,6,14,#00000040
+  }
+}
+
+// One option row. The host assigns each item key "category|Name", so a single
+// `pick` signal carries both the category and the choice.
+def Pick(name="", picked=false) export {
+  row w=fill pad=7,11 radius=8 align=center act=pick {
+    when hover { bg=color.inkHover }
+    when pressed { opacity=0.8 }
+    when focus-visible { stroke=color.blood stroke-w=2 stroke-align=inside }
+    when picked {
+      bg=color.inkPicked
+      stroke=color.gold
+      stroke-w=1.5
+      stroke-align=inside
+      rect w=6 h=6 radius=999 bg=color.gold
+    }
+    text name style=text.opt color=color.cream w=fill ellipsis nowrap
+  }
+}
+
+// One picker column: heading, live count, scrolling option well.
+def Picker(title, count) {
+  col w=fill pad=13 style=fx.card shadow=shadow.card {
+    row align=center gap=8 pad=0,1,10,1 {
+      text title style=text.label color=color.blood
+      spacer
+      text count style=text.meta color=color.muted nowrap
+    }
+    col w=fill h=170 gap=3 style=fx.well shadow=shadow.well pad=6 scroll \
+        scrollbar=auto scrollbar-w=4 scrollbar-fg=color.gold \
+        scrollbar-bg=#D4AF3740 {
+      slot
+    }
+  }
+}
+
+params {
+  species           list(Pick) = []
+  classes           list(Pick) = []
+  backgrounds       list(Pick) = []
+  species_count     text = ""
+  classes_count     text = ""
+  backgrounds_count text = ""
+  match_hint        text = "type to narrow every option"
+}
+
+col w=fill gap=16 {
+  // Filter — one field narrows all three lists at once.
+  row#filter style=fx.field h=44 pad=0,14 gap=10 align=center {
+    text "FILTER" style=text.label color=color.gold nowrap
+    text#query field=filter w=fill h=20 style=text.field color=color.cream
+    text param.match_hint style=text.hint color=color.creamDim nowrap
+  }
+
+  row#pickers w=fill gap=14 align=start {
+    when w<560 { axis=col }
+
+    Picker title="SPECIES" count=param.species_count {
+      each param.species #species
+    }
+    Picker title="CLASS" count=param.classes_count {
+      each param.classes #classes
+    }
+    Picker title="BACKGROUND" count=param.backgrounds_count {
+      each param.backgrounds #backgrounds
+    }
+  }
+
+  col#action w=fill gap=9 {
+    row#generate w=fill h=56 pack=center align=center gap=10 \
+        style=fx.button shadow=shadow.lift act=generate {
+      when hover { bg=linear(180, #E11B23 0%, #A00710 100%) }
+      when pressed { opacity=0.85 }
+      when focus-visible { stroke=color.blood stroke-w=3 stroke-align=inside }
+      text "GENERATE CHARACTER" style=text.button color=color.paper
+    }
+    text "anything left on random is rolled for you" style=text.hint \
+        color=color.muted align-text=center w=fill
+  }
+}

@@ -6,6 +6,7 @@ from shiny import ui
 
 from app.components import (
     eldritch_head_tags,
+    forge_head_tags,
     loader_head_tags,
     loader_panel,
     masonry_head_tags,
@@ -71,6 +72,7 @@ def _head() -> ui.Tag:
                     ),
             *font_links,
             style_tag(),
+            *forge_head_tags(),
             *tablet_head_tags(),
             *number_input_head_tags(),
             *loader_head_tags(),

@@ -2,6 +2,8 @@
 
 from app.components.character_sheet import build_character_sheet
 from app.components.eldritch import eldritch_head_tags
+from app.components.forge import forge_head_tags
+from app.components.forge import forge_host_attrs
 from app.components.loader import loader_head_tags
 from app.components.loader import loader_panel
 from app.components.loader import loader_script
@@ -23,6 +25,8 @@ __all__ = [
 	"build_character_sheet",
 	"build_npc_sheet",
 	"eldritch_head_tags",
+	"forge_head_tags",
+	"forge_host_attrs",
 	"loader_head_tags",
 	"loader_panel",
 	"loader_script",

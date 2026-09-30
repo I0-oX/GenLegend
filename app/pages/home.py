@@ -1,7 +1,10 @@
 """Home generator page layout."""
 
+import json
+
 from shiny import ui
 
+from app.components import forge_host_attrs
 from app.publish_scope import character_panel_class
 from app.publish_scope import home_welcome
 from app.publish_scope import npc_panel_class
@@ -98,27 +101,31 @@ def page_ui(
                                             ui.h3(
                                                     "Generate Character"
                                                     ),
-                                            ui.input_select(
-                                                    "char_species",
-                                                    "Species",
-                                                    species_choices,
-                                                    ),
-                                            ui.input_select(
-                                                    "char_class",
-                                                    "Class",
-                                                    class_choices,
-                                                    ),
-                                            ui.input_select(
-                                                    "char_background",
-                                                    "Background",
-                                                    background_choices,
-                                                    ),
                                             ui.div(
-                                                    {"class": "tablet-actions"},
-                                                    ui.input_action_button(
-                                                            "btn_gen_char",
-                                                            "Generate Character",
-                                                            class_="fantasy-button",
+                                                    forge_host_attrs(),
+                                                    ui.div(
+                                                            {
+                                                                "class": (
+                                                                    "forge-choices"
+                                                                    ),
+                                                                "id": (
+                                                                    "forge-choices"
+                                                                    ),
+                                                                "hidden": "",
+                                                                },
+                                                            json.dumps(
+                                                                {
+                                                                    "species": list(
+                                                                        species_choices
+                                                                        ),
+                                                                    "classes": list(
+                                                                        class_choices
+                                                                        ),
+                                                                    "backgrounds": list(
+                                                                        background_choices
+                                                                        ),
+                                                                    },
+                                                                ),
                                                             ),
                                                     ),
                                             ),

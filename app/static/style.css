@@ -2306,3 +2306,20 @@ header, footer {
     padding: 0;
     overflow: hidden;
 }
+
+/* ---------------------------------------------------------------------------
+   The slab Character Generator face (app/slab/forge.slab → app/static/slab/).
+
+   slab solves its own layout and writes the element's height; the page only
+   owes it a width. The bridge that fills it lives in
+   app/static/js/slab-forge.js.
+   --------------------------------------------------------------------------- */
+.forge-host {
+    width: min(100%, 780px);
+    margin: 1.25rem auto 0;
+    }
+
+.forge-host gl-forge {
+    display: block;
+    width: 100%;
+    }
