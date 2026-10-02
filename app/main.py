@@ -184,9 +184,19 @@ _shiny_app = App(
 # app.api already; every other request falls through to the legacy Shiny
 # frontline (parked NPC/DM surfaces and their routes) until it is retired.
 app = api
+class _RevalidateStaticFiles(StaticFiles):
+    """`/static/*` with revalidation: rebuilt JS/CSS/slab modules must never
+    be shadowed by a heuristically-cached copy (stale-asset phantom bugs)."""
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+        return response
+
+
 app.mount(
         "/static",
-        StaticFiles(
+        _RevalidateStaticFiles(
             directory=Path(
                 __file__
                 ).resolve().parent / "static",
@@ -204,6 +214,10 @@ def site_index() -> FileResponse:
         Path(
             __file__
             ).resolve().parent / "static" / "site" / "index.html",
+        headers={
+            # Never let a stale index.html point at yesterday's app.js.
+            "Cache-Control": "no-cache, must-revalidate",
+            },
         )
 
 @app.get(
