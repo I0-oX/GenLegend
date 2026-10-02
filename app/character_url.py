@@ -255,11 +255,6 @@ def character_params_to_compact(data: dict[str, Any]) -> str:
     )
 
 
-def character_params_to_path(data: dict[str, Any]) -> str:
-    compact = character_params_to_compact(data)
-    return f"/character/{compact}" if compact else ""
-
-
 def character_params_to_hash(data: dict[str, Any]) -> str:
     compact = character_params_to_compact(data)
     return f"#/{compact}" if compact else ""

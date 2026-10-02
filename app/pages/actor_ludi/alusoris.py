@@ -116,9 +116,6 @@ def mount_page(
     initial_url_processed = reactive.value(
             False
             )
-    npc_level = reactive.value(
-            1
-            )
 
     def generate(
             *,

@@ -33,7 +33,6 @@ def head_size(path: Path) -> int | None:
 def pyc_size(path: Path) -> int | None:
 	pyc = path.with_suffix(".pyc")
 	if not pyc.is_file():
-		cache = path.parent / "__pycache__" / f"{path.stem}.cpython-*.pyc"
 		matches = list(path.parent.glob(f"__pycache__/{path.stem}.cpython-*.pyc"))
 		if not matches:
 			return None

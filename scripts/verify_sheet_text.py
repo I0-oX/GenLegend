@@ -39,7 +39,6 @@ from pathlib import Path
 from verify_fingerprint import Grid_Levels
 from verify_fingerprint import Grid_Seeds
 from verify_fingerprint import hush
-from verify_fingerprint import PROJECT_ROOT
 
 
 # Tags that start a new line for a reader: blocks, rows, list items, breaks.

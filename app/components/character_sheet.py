@@ -1079,46 +1079,6 @@ def _render_entry(
             )
 
 
-def _grouped_feature_entries(
-        features: Any,
-        ) -> dict[int, list[Any]]:
-    """
-    Rendered entries bucketed by section — Species, Background, Class.
-
-    Kept for callers that still want three flat blocks. The sheet itself
-    reads `_feature_tree`.
-    """
-    grouped: dict[int, list[Any]] = {
-        _SECTION_SPECIES: [],
-        _SECTION_BACKGROUND: [],
-        _SECTION_CLASS: [],
-        }
-
-    for current_feature in _ordered_features(
-            features
-            ):
-        rendered = _render_feature(
-                current_feature
-                )
-
-        if rendered is None:
-            continue
-
-        section = _feature_place(
-                current_feature
-                )[ 0 ]
-        grouped.setdefault(
-                _SECTION_CLASS
-                if section == _SECTION_OTHER
-                else section,
-                [],
-                ).append(
-                rendered
-                )
-
-    return grouped
-
-
 def _ability_score_boxes(
         stats: Any,
         ) -> list[Any]:

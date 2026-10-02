@@ -8,7 +8,6 @@ from typing import Any
 from shiny import App
 from shiny import reactive
 from shiny import render
-from shiny import ui
 from fastapi.responses import FileResponse
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
