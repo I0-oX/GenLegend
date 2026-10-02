@@ -133,13 +133,30 @@ col w=fill gap=30 {
   // Hero — this component replaces the page heading. The seal is a fixed
   // stack so the hover-gated spinning arc never reflows the layout.
   col w=fill align=center gap=14 pad=44,0,6,0 {
-    stack w=76 h=76 animate=unfurl,600,once,ease-out {
-      rect w=76 h=76 radius=999 bg=radial(#C89A3E33 0%, #C89A3E00 72%)
-      rect w=76 h=76 radius=999 bg=none stroke=color.line stroke-w=1
-      rect self=center w=50 h=50 radius=999 bg=none stroke=color.ochre stroke-w=1.5
+    // The gilt seal: two concentric rings stroked with a metallic gold
+    // ramp (light → ochre → deep → light reads as metal, not as a flat
+    // line), a jewel at the center, and a slow conic glint resting on
+    // the rings. The pointer trades the resting glint for a fast one.
+    stack w=84 h=84 animate=unfurl,600,once,ease-out {
+      // warm bloom so the seal sits in the parchment instead of on it
+      rect w=84 h=84 radius=999 \
+          bg=radial(#F0D89626 0%, #D9A44114 52%, #D9A44100 74%)
+      // outer ring
+      rect w=84 h=84 radius=999 bg=none stroke-align=inside stroke-w=1.5 \
+          stroke=linear(125, #F5E3B0 0%, #D9A441 38%, #8A5A12 62%, #E7C77A 100%)
+      // inner ring — a shade brighter, heavier, strictly concentric
+      rect self=center w=54 h=54 radius=999 bg=none stroke-align=inside \
+          stroke-w=2 stroke=linear(125, #E7C77A 0%, #D9A441 46%, #F5E3B0 100%)
+      // jewel in the middle
+      rect self=center w=9 h=9 radius=999 \
+          bg=radial(#F5E3B0 0%, #D9A441 55%, #8A5A12 100%)
+      // resting glint: a faint conic sweep turning once every 9s
+      rect w=84 h=84 radius=999 bg=none stroke-w=2.5 stroke-align=inside \
+          stroke=conic(0, #D9A44100 0%, #F5E3B099 45%, #D9A44100 100%) \
+          animate=spin,9000,loop,linear
       when hover {
-        rect w=76 h=76 radius=999 bg=none stroke-w=2 \
-            stroke=conic(0, #C89A3E00 0%, #C89A3E 45%, #C89A3E00 100%) \
+        rect w=84 h=84 radius=999 bg=none stroke-w=3 stroke-align=inside \
+            stroke=conic(0, #D9A44100 0%, #F5E3B0 45%, #D9A44100 100%) \
             animate=spin,2400,loop,linear
       }
     }
