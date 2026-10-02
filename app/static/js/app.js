@@ -18,7 +18,7 @@
 (() => {
     'use strict';
 
-    const SLAB_VERSION = '8';
+    const SLAB_VERSION = '9';
     const FONTS = [
         ['Cinzel', '/static/fonts/slab-cinzel-700.ttf'],
         ['Eagle Lake', '/static/fonts/slab-eagle-lake-400.ttf'],
@@ -69,7 +69,9 @@
         pending: null,      // sheet selectors before the next generate
         level: 1,
         busy: false,
+        pendingGenerate: null, // coalesced request waiting for the current flight
         openField: null,    // 'species' | 'background' | 'char_class' | 'specialization'
+        openEpoch: 0,       // closeFields() counter — invalidates pending opens
         shareTimer: null,
     };
 
@@ -83,6 +85,10 @@
     }
 
     function showView(name) {
+        // Invariant: a view switch never carries an open selector — a
+        // stuck selector-open class leaves gl-sheet's padded hit box
+        // swallowing clicks on whatever sits under it.
+        closeFields();
         document.getElementById('view-home').hidden = name !== 'home';
         document.getElementById('view-sheet').hidden = name !== 'sheet';
     }
@@ -102,10 +108,31 @@
 
     /* ---- /api/choices ------------------------------------------------ */
 
+    async function loadChoicesOnce(url) {
+        // A hung request here would leave the app half-wired with no
+        // retry: every control looks dead until a reload. Bound it.
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000);
+        try {
+            const response = await fetch(url, { signal: controller.signal });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return await response.json();
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
     async function loadChoices() {
-        const response = await fetch('/api/choices');
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        state.lists = await response.json();
+        let lastError = null;
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+            try {
+                state.lists = await loadChoicesOnce('/api/choices');
+                return;
+            } catch (error) {
+                lastError = error;
+            }
+        }
+        throw lastError;
     }
 
     function forgeRowsInit() {
@@ -123,9 +150,17 @@
     async function specializationsFor(guild) {
         const key = guild || 'Random';
         if (!state.specCache[key]) {
-            const response = await fetch(
-                '/api/specializations?guild=' + encodeURIComponent(key)
-            );
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 10000);
+            let response;
+            try {
+                response = await fetch(
+                    '/api/specializations?guild=' + encodeURIComponent(key),
+                    { signal: controller.signal }
+                );
+            } finally {
+                clearTimeout(timer);
+            }
             const data = await response.json();
             if (!response.ok || data.ok === false) {
                 throw new Error(data.error || 'HTTP ' + response.status);
@@ -213,10 +248,16 @@
     }
 
     function closeFields() {
+        // Any close invalidates a pending async open: options for
+        // specialization arrive from the network, and a click outside /
+        // navigation / pick while they load must not resurrect the
+        // selector (and its selector-open hit box) afterwards.
+        state.openEpoch += 1;
         state.openField = null;
         for (const param of Object.keys(SHEET_FIELDS)) {
             state.sheet['open_' + SHEET_FIELDS[param]] = false;
         }
+        state.sheet.classList.remove('selector-open');
     }
 
     async function onOpenField(action) {
@@ -226,6 +267,7 @@
             closeFields();
             return;
         }
+        const epoch = state.openEpoch;
         let names;
         try {
             if (field === 'specialization') {
@@ -243,10 +285,13 @@
             sheetError(String(error.message || error));
             return;
         }
+        if (epoch !== state.openEpoch) return;
         closeFields();
         state.openField = field;
         const current = state.pending ? state.pending[field] : 'Random';
         state.sheet['open_' + field] = true;
+        // Grow the host box so overlay clicks/wheels land on gl-sheet.
+        state.sheet.classList.add('selector-open');
         state.sheet.field_options = names.map((name) => ({
             key: field + '|' + name,
             name: name,
@@ -258,6 +303,37 @@
             containOverscroll(state.sheet.shadowRoot);
         }));
     }
+
+    /* A click anywhere outside the open selector retracts it — not just a
+     * click back on the field. Slab hit-tests internally (native target is
+     * always gl-sheet), so geometry decides "inside": the overlay box or a
+     * 44px field row under the cursor. Capture phase, so it runs before
+     * slab's own click handling re-opens whatever field was hit. */
+    document.addEventListener('click', (event) => {
+        if (!state.openField) return;
+        const x = event.clientX;
+        const y = event.clientY;
+        const nodes = [];
+        const walk = (root) => {
+            for (const el of root.querySelectorAll('*')) {
+                if (el.shadowRoot) walk(el.shadowRoot);
+                nodes.push(el);
+            }
+        };
+        walk(state.sheet.shadowRoot);
+        const inside = nodes.some((el) => {
+            const b = el.getBoundingClientRect();
+            if (x < b.left || x > b.right || y < b.top || y > b.bottom) return false;
+            const h = b.height;
+            const w = b.width;
+            // the open overlay list
+            if (h > 150 && h < 200 && w > 150 && w < 500 && el.scrollHeight > el.clientHeight + 20) return true;
+            // any selector field row
+            if (Math.abs(h - 44) < 4 && w > 150 && w < 600) return true;
+            return false;
+        });
+        if (!inside) closeFields();
+    }, true);
 
     /* Mirrors app/parameters.py specialization_selection(). */
     function specializationSelection(selectedGuild, available) {
@@ -315,17 +391,41 @@
     /* ---- POST /api/character/generate -------------------------------- */
 
     async function generate(body, options) {
-        if (state.busy) return null;
+        if (state.busy) {
+            // Buttons clicked mid-flight used to be dropped silently —
+            // on a slow server that reads as "the button is dead".
+            // Coalesce instead: the newest request wins and runs when the
+            // current flight settles; its caller still gets a promise.
+            return new Promise((resolve) => {
+                if (state.pendingGenerate) state.pendingGenerate.resolve(null);
+                state.pendingGenerate = { body: body, options: options, resolve: resolve };
+            });
+        }
         const silent = options && options.silent;
         state.busy = true;
         state.sheet.busy = true;
-        loader(true);
+        state.skipRestore = false;
         try {
-            const response = await fetch('/api/character/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-            });
+            // Inside the try: if the loader overlay throws, the catch +
+            // finally must still run, or state.busy stays true forever
+            // and every later Generate silently no-ops until a reload.
+            loader(true);
+            // The loader covers the page while this runs; a request that
+            // never settles would leave it up forever and every button
+            // under it dead until a reload. Abort so finally always runs.
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 30000);
+            let response;
+            try {
+                response = await fetch('/api/character/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                    signal: controller.signal,
+                });
+            } finally {
+                clearTimeout(timer);
+            }
             let data = null;
             try {
                 data = await response.json();
@@ -342,12 +442,28 @@
             return data;
         } catch (error) {
             console.error('generate failed', error);
-            if (!silent) sheetError(String(error.message || error));
+            if (!silent) {
+                sheetError(error && error.name === 'AbortError'
+                    ? 'the forge took too long — try again'
+                    : String(error.message || error));
+            }
             return null;
         } finally {
             state.busy = false;
             state.sheet.busy = false;
-            loader(false);
+            try {
+                loader(false);
+            } catch (error) {
+                console.error('loader hide failed', error);
+            }
+            const queued = state.pendingGenerate;
+            state.pendingGenerate = null;
+            if (queued) {
+                generate(queued.body, queued.options).then(
+                    queued.resolve,
+                    () => queued.resolve(null)
+                );
+            }
         }
     }
 
@@ -359,10 +475,14 @@
         state.sheet.error = '';
         closeFields();
         document.getElementById('character_result').innerHTML = data.sheet_html;
-        if (state.hash && location.hash !== state.hash) {
-            location.hash = state.hash;
+        // The user may have hit Home while this ran — never yank them back
+        // to the sheet, neither via the hash nor via the view itself.
+        if (!state.skipRestore) {
+            if (state.hash && location.hash !== state.hash) {
+                location.hash = state.hash;
+            }
+            showSheet();
         }
-        showSheet();
     }
 
     /* ---- share ------------------------------------------------------- */
@@ -523,6 +643,16 @@
 
     function onShellSignal(action) {
         if (action === 'nav_home') {
+            // A generate still in flight re-writes the view/hash when it
+            // lands; remember the user already left so it can't yank them
+            // back to the sheet — even when Home was pressed from the
+            // clean home URL (hash already empty). A request still queued
+            // behind the flight dies with the same intent.
+            state.skipRestore = true;
+            if (state.pendingGenerate) {
+                state.pendingGenerate.resolve(null);
+                state.pendingGenerate = null;
+            }
             if (location.hash) location.hash = '';
             else showHome();
             return;
@@ -606,10 +736,19 @@
                 import('/static/slab/footer.js?v=' + SLAB_VERSION),
                 import('/static/slab/forge.js?v=' + SLAB_VERSION),
                 import('/static/slab/sheet.js?v=' + SLAB_VERSION),
+                import('/static/slab/papiro.js?v=' + SLAB_VERSION),
             ]).then((modules) => registerFonts(modules[2]));
         } catch (error) {
             console.error('slab: the components failed to load', error);
             return;
+        }
+
+        /* Procedural restain: fresh turbulence seeds on every load, so the
+           papyrus fibers and grit never repeat between visits. */
+        const marks = document.getElementById('ground_marks');
+        if (marks) {
+            marks.style.backgroundImage = getComputedStyle(marks).backgroundImage.replace(
+                /seed='\d+'/g, () => "seed='" + Math.floor(Math.random() * 9999) + "'");
         }
 
         state.shell = document.querySelector('gl-shell');

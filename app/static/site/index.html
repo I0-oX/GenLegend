@@ -39,27 +39,94 @@
    flex: 0 0 auto;
   }
 
+  /* Selector overlays hang below the card. Paint them above the legacy
+     result, and while one is open grow the host box so native hit-testing
+     (wheel + clicks on the lower rows) lands on gl-sheet, not the content
+     behind it. */
+  gl-sheet {
+   position: relative;
+   z-index: 999;
+  }
+  gl-sheet.selector-open {
+   padding-bottom: 210px;
+   margin-bottom: -210px;
+  }
+
   html {
-   background-color: #e9d8b0;
+   background-color: #dcc49a;
    color: #2b1e12;
   }
   body {
    height: auto; /* style.css pins height:100% — that truncates the column
                     flex at the viewport and lets children overflow it */
    min-height: 100vh;
-   /* Procedural papyrus: fiber weave + age blotches + a lit belly and
-      darkened rim, all fixed to the viewport like a sheet on the table. */
-   background-color: #e9d8b0;
-   background-image:
-    repeating-linear-gradient(92deg, rgba(139, 107, 54, 0.05) 0 1px, transparent 1px 3px),
-    repeating-linear-gradient(2deg, rgba(139, 107, 54, 0.04) 0 1px, transparent 1px 4px),
-    radial-gradient(520px 260px at 14% 10%, rgba(184, 150, 90, 0.30), transparent 72%),
-    radial-gradient(640px 380px at 86% 34%, rgba(160, 124, 64, 0.22), transparent 72%),
-    radial-gradient(460px 460px at 46% 104%, rgba(146, 110, 52, 0.26), transparent 70%),
-    radial-gradient(1100px 620px at 50% 26%, #f2e4c0 0%, #e9d8b0 56%, #ddc69c 100%),
-    radial-gradient(closest-side at 50% 50%, transparent 62%, rgba(90, 64, 30, 0.34) 100%);
-   background-attachment: fixed;
+   /* Stack its own background BELOW its negative-z children: without a
+      context here, body's background paints in step 3 of the root context
+      and covers <gl-papiro> (z:-2) and #ground_marks (z:-1) entirely. */
+   position: relative;
+   z-index: 0;
+   background-color: #cfb183;
    color: #2b1e12;
+  }
+
+  /* The papyrus sheet body is a slab component (app/slab/papiro.slab →
+     <gl-papiro>): belly wash, procedural grain and age stains. Fixed full
+     viewport behind all content and never hit-testable — a hit-testable
+     backdrop would swallow every click on the page. */
+  gl-papiro {
+   position: fixed;
+   inset: 0;
+   z-index: -2;
+   display: block;
+   pointer-events: none;
+  }
+
+  /* Marks laid over the sheet: SVG fiber/grit (reseeded per load from
+     app.js, so the turbulence pattern is new every visit), horizontal
+     strip courses with dark seam + light highlight, vertical strip joins
+     at two irregular frequencies, crisp reed threads, cross fibers,
+     overlapping translucent strip bands, a diagonal sheen, fold creases,
+     water ring, light mottles, foxing specks, vignette and burnt edges.
+     Repeat list must match the layer count (31): first 8 repeat, the rest
+     no-repeat. */
+  #ground_marks {
+   position: fixed;
+   inset: 0;
+   z-index: -1;
+   pointer-events: none;
+   background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='340' height='340'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.011 0.24' numOctaves='3' seed='11'/><feColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.26 0 0 0 0 0.12 0.5 0.5 0.5 0 -0.26'/></filter><rect width='340' height='340' filter='url(%23f)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='280' height='280'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0.33 0 0 0 0 0.24 0 0 0 0 0.11 0.4 0.4 0.4 0 -0.32'/></filter><rect width='280' height='280' filter='url(%23g)'/></svg>"),
+    repeating-linear-gradient(1.5deg, rgba(255, 246, 216, 0.08) 0 60px, rgba(146, 106, 54, 0.05) 60px 118px, rgba(104, 74, 34, 0.18) 118px 121px, rgba(255, 246, 216, 0.10) 121px 124px),
+    repeating-linear-gradient(-0.8deg, rgba(255, 246, 216, 0.07) 0 74px, rgba(146, 106, 54, 0.05) 74px 156px, rgba(104, 74, 34, 0.14) 156px 159px, rgba(255, 246, 216, 0.08) 159px 162px),
+    repeating-linear-gradient(88.5deg, transparent 0 378px, rgba(96, 68, 28, 0.20) 378px 381px, rgba(255, 246, 218, 0.10) 381px 385px),
+    repeating-linear-gradient(91.2deg, transparent 0 540px, rgba(96, 68, 28, 0.14) 540px 543px, rgba(255, 246, 218, 0.08) 543px 546px),
+    repeating-linear-gradient(0.9deg, rgba(132, 98, 48, 0.07) 0 2px, transparent 2px 13px),
+    repeating-linear-gradient(87deg, rgba(139, 107, 54, 0.035) 0 1px, transparent 1px 7px),
+    linear-gradient(180deg, transparent 30%, rgba(255, 244, 214, 0.10) 33%, rgba(246, 232, 198, 0.08) 46%, transparent 49%),
+    linear-gradient(90deg, transparent 58%, rgba(255, 244, 214, 0.09) 61%, rgba(246, 232, 198, 0.07) 72%, transparent 75%),
+    linear-gradient(112deg, transparent 24%, rgba(255, 250, 232, 0.10) 44%, transparent 62%),
+    linear-gradient(90deg, transparent 37.8%, rgba(255, 246, 218, 0.11) 38%, rgba(92, 66, 30, 0.24) 38.3%, transparent 38.7%),
+    linear-gradient(0deg, transparent 62.8%, rgba(255, 246, 218, 0.10) 63%, rgba(92, 66, 30, 0.20) 63.3%, transparent 63.7%),
+    radial-gradient(460px 340px at 74% 14%, transparent 42%, rgba(104, 70, 30, 0.42) 76%, transparent 100%),
+    radial-gradient(5px 5px at 22% 34%, rgba(74, 48, 18, 0.70), transparent 70%),
+    radial-gradient(2px 2px at 27% 38%, rgba(74, 48, 18, 0.60), transparent 70%),
+    radial-gradient(3px 3px at 61% 71%, rgba(74, 48, 18, 0.55), transparent 70%),
+    radial-gradient(6px 6px at 83% 84%, rgba(68, 42, 16, 0.65), transparent 70%),
+    radial-gradient(3px 3px at 38% 88%, rgba(68, 42, 16, 0.60), transparent 70%),
+    radial-gradient(4px 4px at 55% 22%, rgba(74, 48, 18, 0.55), transparent 70%),
+    radial-gradient(2px 2px at 71% 47%, rgba(74, 48, 18, 0.50), transparent 70%),
+    radial-gradient(7px 7px at 12% 55%, rgba(68, 42, 16, 0.60), transparent 70%),
+    radial-gradient(3px 3px at 91% 63%, rgba(68, 42, 16, 0.55), transparent 70%),
+    radial-gradient(4px 4px at 44% 16%, rgba(74, 48, 18, 0.60), transparent 70%),
+    radial-gradient(2px 2px at 34% 74%, rgba(74, 48, 18, 0.55), transparent 70%),
+    radial-gradient(5px 5px at 66% 6%, rgba(68, 42, 16, 0.55), transparent 70%),
+    radial-gradient(240px 150px at 38% 30%, rgba(255, 247, 220, 0.16), transparent 74%),
+    radial-gradient(300px 190px at 76% 62%, rgba(255, 247, 220, 0.13), transparent 74%),
+    radial-gradient(closest-side at 50% 50%, transparent 40%, rgba(50, 32, 12, 0.52) 100%),
+    linear-gradient(180deg, rgba(50, 32, 12, 0.42), transparent 14%),
+    linear-gradient(0deg, rgba(50, 32, 12, 0.38), transparent 12%);
+   background-repeat: repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
   }
 
   /* Welcome / tablet chrome is gone: <gl-forge> owns the whole home, and
@@ -69,26 +136,53 @@
    margin-top: 1rem;
   }
 
-  /* The generated sheet is content: a vellum card laid on the papyrus.
-     The legacy result inherits colors — keep its own ink text so the light
-     card doesn't pick up any stray color. */
+  /* The generated sheet is content written ON the papyrus: no vellum
+     card, no drop shadow — the ground shows through, legacy boxes become
+     washes with an inked edge, and text is warm ink instead of neutral
+     gray. The reds (name, labels) keep the legacy primaries. */
   #character_result {
-   background: #f5eed8;
-   color: var(--text-color);
-   border: 1px solid #a88f63;
-   border-radius: 16px;
-   box-shadow: 0 16px 40px rgba(74, 58, 31, 0.28);
+   background: transparent;
+   color: #33291c;
+   --back-color: #efe3c4; /* pale parchment wash for legacy panels/tables */
+   --text-color: #33291c;
+   border: 0;
+   border-radius: 0;
+   box-shadow: none;
    margin-top: 1.25rem;
    overflow: hidden;
    text-align: left;
   }
   #character_result .sheet {
-   padding: 1.5rem 1.5rem 2rem;
+   padding: 1.75rem 1.75rem 2.5rem;
    box-sizing: border-box;
+  }
+  /* Legacy white cards → translucent washes with a ruled ink edge. */
+  #character_result .npc-box,
+  #character_result .npc-textbox,
+  #character_result .npc-scores {
+   background: rgba(255, 249, 232, 0.20);
+   border: 1px solid rgba(51, 38, 18, 0.55);
+   border-radius: 3px;
+   box-shadow: none;
+   color: #33291c;
+  }
+  #character_result .symbol {
+   background-color: rgba(60, 44, 20, 0.16);
+   color: rgba(60, 44, 20, 0.55);
   }
   </style>
 </head>
 <body>
+  <!-- The papyrus sheet body itself: procedural slab wash + grain
+       (app/slab/papiro.slab → <gl-papiro>). Fixed full viewport behind all
+       content; pointer-events:none so it can never eat a click. -->
+  <gl-papiro></gl-papiro>
+
+  <!-- Marks laid over the sheet: SVG fiber/grit (reseeded each load by
+       app.js so no two visits repeat), strip courses, vertical seams, fold
+       creases, water ring, foxing specks, vignette and burnt edges. -->
+  <div id="ground_marks" aria-hidden="true"></div>
+
   <!-- The summon loader overlay (AtlasVenustas/Tools_of_Loader.py). -->
   <div id="loader" aria-live="polite" aria-busy="true">
     <div class="sol-layer"></div>
@@ -130,6 +224,6 @@
 
   <script src="/static/js/summon-loader.js"></script>
   <script src="/static/js/eldritch.js"></script>
-  <script type="module" src="/static/js/app.js?v=5"></script>
+  <script type="module" src="/static/js/app.js?v=8"></script>
 </body>
 </html>

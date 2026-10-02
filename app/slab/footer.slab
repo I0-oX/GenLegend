@@ -15,8 +15,8 @@ tokens {
     parch     #B9A67C   // secondary text on leather
   }
   text {
-    link { family "Cinzel"; size 12; weight 700; tracking 1.4 }
-    by   { family "Cinzel"; size 11; weight 700; tracking 1.4 }
+    link { family "Cinzel"; size 13; weight 700; tracking 1.4 }
+    by   { family "Cinzel"; size 12; weight 700; tracking 1.4 }
   }
 }
 

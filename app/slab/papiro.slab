@@ -1,0 +1,23 @@
+// gl-papiro — the procedural papyrus sheet body: a viewport-filling wash
+// (warm belly with falloff) under slab grain (runtime noise), layered with
+// age stains. Radial is centered by design (styling.md), so each stain is
+// an oversized radial rect placed with self/offset inside the stack;
+// positive offsets may hang out of the stack — declared overlap paints.
+
+tokens {
+  fx {
+    papiro  { bg radial(#E8D4A4 0%, #CFB183 50%, #B6976A 100%); grain 0.16 }
+    manchaA { bg radial(rgba(118, 82, 34, 0.44) 0%, rgba(118, 82, 34, 0) 74%); grain 0.05 }
+    manchaB { bg radial(rgba(104, 70, 30, 0.50) 0%, rgba(104, 70, 30, 0) 76%); grain 0.05 }
+    manchaC { bg radial(rgba(96, 64, 26, 0.38) 0%, rgba(96, 64, 26, 0) 72%); grain 0.05 }
+    velo    { bg rgba(255, 246, 218, 0.05); grain 0.12 }
+  }
+}
+
+stack w=fill h=fill style=fx.papiro {
+  rect w=980 h=640 style=fx.manchaA self=top-start offset=180,40
+  rect w=1120 h=760 style=fx.manchaB self=top-end offset=520,300
+  rect w=940 h=720 style=fx.manchaC self=bottom-start offset=160,420
+  rect w=900 h=620 style=fx.manchaA self=bottom-end offset=480,380
+  rect w=fill h=fill style=fx.velo
+}

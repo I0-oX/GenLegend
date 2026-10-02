@@ -25,7 +25,7 @@ tokens {
   }
   text {
     brand { family "Cinzel"; size 24; weight 700 }
-    nav   { family "Cinzel"; size 13; weight 700; tracking 1.6 }
+    nav   { family "Cinzel"; size 14; weight 700; tracking 1.6 }
   }
   fx {
     pill { stroke #A97B1D; stroke-w 1; radius 8 }

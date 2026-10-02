@@ -20,40 +20,40 @@
 
 tokens {
   color {
-    parch      #E9D8B0   // the page ground (index.html matches)
-    vellum     #F5EED8   // card surface
-    raised     #EFE2C0   // hover / picked rows
-    well       #E5D3A6   // inset wells (option overlays)
-    field      #F0E6C8   // input strips sit between card and well
-    line       #A88F63   // hairline borders
-    ochre      #8A5A12   // labels, values, carets (dark gold)
-    ochreDeep  #6E4710   // resting accent stroke
+    parch      #DCC49A   // aged page ground (index.html matches)
+    vellum     #F1E7CC   // card surface
+    raised     #EBDFBC   // hover / picked rows
+    well       #DFCB9E   // inset wells (option overlays)
+    field      #EEE3C2   // input strips sit between card and well
+    line       #96794A   // hairline borders
+    ochre      #7C4F0E   // labels, values, carets (dark gold)
+    ochreDeep  #5E3B0A   // resting accent stroke
     wax        #9E2B25   // the loud one (sealing wax)
     waxDeep    #7E1F1C   // pressed
     ink        #2B1E12   // primary text
-    inkSoft    #5F4A2D   // secondary text
+    inkSoft    #483418   // secondary text
   }
   text {
-    kicker { family "Cinzel"; size 13; weight 700; tracking 3 }
-    label  { family "Cinzel"; size 11; weight 700; tracking 1.6 }
-    opt    { family "Eagle Lake"; size 15; weight 400 }
-    field  { family "Eagle Lake"; size 14; weight 400 }
+    kicker { family "Cinzel"; size 14; weight 700; tracking 3 }
+    label  { family "Cinzel"; size 12; weight 700; tracking 1.6 }
+    opt    { family "Eagle Lake"; size 16; weight 400 }
+    field  { family "Eagle Lake"; size 15; weight 400 }
     button { family "Cinzel"; size 14; weight 700; tracking 1.8 }
     level  { family "Cinzel"; size 17; weight 700 }
-    hint   { family "Cinzel"; size 11; weight 700; tracking 1.2 }
+    hint   { family "Cinzel"; size 12; weight 700; tracking 1.2 }
   }
   fx {
-    card  { bg #F5EED8; stroke #A88F63; stroke-w 1; radius 14; grain 0.06 }
-    field { bg #F0E6C8; stroke #A88F63; stroke-w 1; radius 10 }
-    well  { bg #E5D3A6; stroke #A88F63; stroke-w 1; radius 10; grain 0.05 }
-    step  { bg #F0E6C8; stroke #A88F63; stroke-w 1; radius 10 }
+    card  { bg linear(180, #F4EBD4 0%, #EADDBA 100%); stroke #96794A; stroke-w 1; radius 14; grain 0.10 }
+    field { bg #EEE3C2; stroke #96794A; stroke-w 1; radius 10; grain 0.07 }
+    well  { bg radial(#E4D2A6 0%, #D8C294 100%); stroke #96794A; stroke-w 1; radius 10; grain 0.11 }
+    step  { bg #EEE3C2; stroke #96794A; stroke-w 1; radius 10; grain 0.07 }
     button { bg linear(180, #B5352F 0%, #7E1F1C 100%); radius 10 }
-    ghost { stroke #A88F63; stroke-w 1; radius 10 }
+    ghost { stroke #96794A; stroke-w 1; radius 10 }
   }
   shadow {
-    card 0,12,32,#4A3A1F40
-    well inset,0,2,8,#8A6F4733
-    lift 0,10,26,#9E2B253D
+    card 0,12,32,#3A2A1466
+    well inset,0,2,8,#6E52303D
+    lift 0,10,26,#8E242647
   }
 }
 

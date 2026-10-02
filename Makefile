@@ -76,7 +76,7 @@ loss-check:
 SLAB_VERSION := 0.1.0
 SLAB := bunx @stencil-hq/slab@$(SLAB_VERSION)
 SLAB_OUT := app/static/slab
-SLAB_DOCS := app/slab/shell.slab app/slab/footer.slab app/slab/forge.slab app/slab/sheet.slab
+SLAB_DOCS := app/slab/shell.slab app/slab/footer.slab app/slab/forge.slab app/slab/sheet.slab app/slab/papiro.slab
 
 slab:
 	@for doc in $(SLAB_DOCS); do $(SLAB) check $$doc || exit 1; done

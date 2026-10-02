@@ -18,41 +18,41 @@
 
 tokens {
   color {
-    parch      #E9D8B0   // the page ground (index.html matches)
-    vellum     #F5EED8   // card surface
-    raised     #EFE2C0   // hover / chips / picked rows
-    well       #E5D3A6   // inset wells (option lists)
-    field      #F0E6C8   // input strips sit between card and well
-    line       #A88F63   // hairline borders
-    ochre      #8A5A12   // labels, carets, gilt accents (dark gold)
-    ochreDeep  #6E4710   // resting accent stroke
+    parch      #DCC49A   // aged page ground (index.html matches)
+    vellum     #F1E7CC   // card surface
+    raised     #EBDFBC   // hover / chips / picked rows
+    well       #DFCB9E   // inset wells (option lists)
+    field      #EEE3C2   // input strips sit between card and well
+    line       #96794A   // hairline borders
+    ochre      #7C4F0E   // labels, carets, gilt accents (dark gold)
+    ochreDeep  #5E3B0A   // resting accent stroke
     wax        #9E2B25   // the loud one (sealing wax)
     waxDeep    #7E1F1C   // pressed
     ink        #2B1E12   // primary text
-    inkSoft    #5F4A2D   // secondary text
+    inkSoft    #483418   // secondary text
   }
   text {
     hero    { family "Cinzel"; size 46; weight 700; tracking 4 }
     tagline { family "Cinzel"; size 15; weight 700; tracking 0.6 }
-    chip    { family "Cinzel"; size 10; weight 700; tracking 1.8 }
-    label   { family "Cinzel"; size 11; weight 700; tracking 2 }
-    opt     { family "Eagle Lake"; size 15; weight 400 }
-    meta    { family "Cinzel"; size 11; weight 700; tracking 1.4 }
-    field   { family "Eagle Lake"; size 14; weight 400 }
+    chip    { family "Cinzel"; size 11; weight 700; tracking 1.8 }
+    label   { family "Cinzel"; size 12; weight 700; tracking 2 }
+    opt     { family "Eagle Lake"; size 16; weight 400 }
+    meta    { family "Cinzel"; size 12; weight 700; tracking 1.4 }
+    field   { family "Eagle Lake"; size 15; weight 400 }
     button  { family "Cinzel"; size 17; weight 700; tracking 2.4 }
-    hint    { family "Cinzel"; size 11; weight 700; tracking 1.2 }
+    hint    { family "Cinzel"; size 12; weight 700; tracking 1.2 }
   }
   fx {
-    card  { bg #F5EED8; stroke #A88F63; stroke-w 1; radius 16; grain 0.06 }
-    well  { bg #E5D3A6; stroke #A88F63; stroke-w 1; radius 10; grain 0.05 }
-    field { bg #F0E6C8; stroke #A88F63; stroke-w 1; radius 10 }
-    pill  { bg #EFE2C0; stroke #A88F63; stroke-w 1; radius 999 }
+    card  { bg linear(180, #F4EBD4 0%, #EADDBA 100%); stroke #96794A; stroke-w 1; radius 16; grain 0.10 }
+    well  { bg radial(#E4D2A6 0%, #D8C294 100%); stroke #96794A; stroke-w 1; radius 10; grain 0.11 }
+    field { bg #EEE3C2; stroke #96794A; stroke-w 1; radius 10; grain 0.07 }
+    pill  { bg #EBDFBC; stroke #96794A; stroke-w 1; radius 999; grain 0.09 }
     button { bg linear(180, #B5352F 0%, #7E1F1C 100%); radius 12 }
   }
   shadow {
-    card 0,16,40,#4A3A1F47
-    well inset,0,2,8,#8A6F4733
-    lift 0,12,30,#9E2B253D
+    card 0,16,40,#3A2A1466
+    well inset,0,2,8,#6E52303D
+    lift 0,12,30,#8E242647
   }
 }
 
@@ -144,7 +144,7 @@ col w=fill gap=30 {
       }
     }
     text "GEN LEGEND" style=text.hero align-text=center \
-        color=linear(180, #6E4710 0%, #9A6A18 55%, #6E4710 100%) \
+        color=linear(180, #523305 0%, #8A5A12 55%, #523305 100%) \
         animate=unfurl,700,once,ease-out,150
     text "Forge a legendary character for your next adventure." \
         style=text.tagline color=color.inkSoft align-text=center \
