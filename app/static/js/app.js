@@ -605,6 +605,8 @@
             nav_npc: () => onShellSignal('nav_npc'),
             nav_npclist: () => onShellSignal('nav_npclist'),
             nav_dm: () => onShellSignal('nav_dm'),
+        });
+        wire(document.querySelector('gl-footer'), {
             open_about: () => onLinkSignal('open_about'),
             open_wiki: () => onLinkSignal('open_wiki'),
             open_julio: () => onLinkSignal('open_julio'),
@@ -625,6 +627,18 @@
             generate: onSheetGenerate,
             share: () => void onShare(),
         });
+
+        /* While a selector overlay is open, wheel over the sheet (toolbar or
+         * its attached option list) must not scroll the document; the slab
+         * kernel owns the list scroll. */
+        document.addEventListener('wheel', (event) => {
+            const open = Object.values(SHEET_FIELDS).some(
+                (field) => state.sheet && state.sheet['open_' + field]
+            );
+            if (open && event.composedPath().includes(state.sheet)) {
+                event.preventDefault();
+            }
+        }, { passive: false });
 
         forgeRowsInit();
         paintForge();
