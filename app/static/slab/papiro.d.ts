@@ -105,6 +105,30 @@ export declare class SlabPapiroElement extends HTMLElement {
    getDivider(key: string): number;
    /** Return the current retained scene, stable until the next solve. */
    sceneSnapshot(): readonly SceneNode[];
+   get 'm1x'(): number | undefined;
+   set 'm1x'(v: number);
+   get 'm1y'(): number | undefined;
+   set 'm1y'(v: number);
+   get 'm2x'(): number | undefined;
+   set 'm2x'(v: number);
+   get 'm2y'(): number | undefined;
+   set 'm2y'(v: number);
+   get 'm3x'(): number | undefined;
+   set 'm3x'(v: number);
+   get 'm3y'(): number | undefined;
+   set 'm3y'(v: number);
+   get 'm4x'(): number | undefined;
+   set 'm4x'(v: number);
+   get 'm4y'(): number | undefined;
+   set 'm4y'(v: number);
+   get 'm5x'(): number | undefined;
+   set 'm5x'(v: number);
+   get 'm5y'(): number | undefined;
+   set 'm5y'(v: number);
+   get 'm6x'(): number | undefined;
+   set 'm6x'(v: number);
+   get 'm6y'(): number | undefined;
+   set 'm6y'(v: number);
    /** Set one scalar parameter by name. */
    setParam(name: string, v: unknown): boolean;
    /** Read the last scalar parameter value accepted by this element. */

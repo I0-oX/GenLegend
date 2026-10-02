@@ -18,7 +18,7 @@
 (() => {
     'use strict';
 
-    const SLAB_VERSION = '9';
+    const SLAB_VERSION = '13';
     const FONTS = [
         ['Cinzel', '/static/fonts/slab-cinzel-700.ttf'],
         ['Eagle Lake', '/static/fonts/slab-eagle-lake-400.ttf'],
@@ -743,12 +743,29 @@
             return;
         }
 
-        /* Procedural restain: fresh turbulence seeds on every load, so the
-           papyrus fibers and grit never repeat between visits. */
-        const marks = document.getElementById('ground_marks');
-        if (marks) {
-            marks.style.backgroundImage = getComputedStyle(marks).backgroundImage.replace(
-                /seed='\d+'/g, () => "seed='" + Math.floor(Math.random() * 9999) + "'");
+        /* Per-load imperfection: hand the papyrus a fresh scatter of
+           tone patches (slab param anchors on <gl-papiro>), so no two
+           visits age the same way. Slab owns the paint — this only moves
+           anchors; no SVG, no CSS lines. */
+        const papiro = document.querySelector('gl-papiro');
+        if (papiro) {
+            const rand = (min, max) => Math.round(min + Math.random() * (max - min));
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            // Mottle patches drift inside the viewport but may hang off
+            // an edge, like real stains that started beyond the sheet.
+            papiro.m1x = rand(-160, Math.max(-40, vw - 640));
+            papiro.m1y = rand(-120, Math.max(-40, vh - 420));
+            papiro.m2x = rand(-120, Math.max(-40, vw - 560));
+            papiro.m2y = rand(-80, Math.max(-40, vh - 520));
+            papiro.m3x = rand(-180, Math.max(-40, vw - 560));
+            papiro.m3y = rand(-60, Math.max(-40, vh - 460));
+            papiro.m4x = rand(-140, Math.max(-40, vw - 460));
+            papiro.m4y = rand(-140, Math.max(-40, vh - 400));
+            papiro.m5x = rand(-180, Math.max(-40, vw - 560));
+            papiro.m5y = rand(-140, Math.max(-40, vh - 380));
+            papiro.m6x = rand(-80, Math.max(-40, vw - 480));
+            papiro.m6y = rand(-60, Math.max(-40, vh - 420));
         }
 
         state.shell = document.querySelector('gl-shell');
