@@ -18,7 +18,10 @@
 (() => {
     'use strict';
 
-    const SLAB_VERSION = '16';
+    const SLAB_VERSION = '26';
+    // Detail marks (clouds/splotches/fibers/flecks) scattered on
+    // <gl-parchment> each load — must match DETAIL in parchment.slab.
+    const PARCHMENT_MARKS = 244;
     const FONTS = [
         ['Cinzel', '/static/fonts/slab-cinzel-700.ttf'],
         ['Eagle Lake', '/static/fonts/slab-eagle-lake-400.ttf'],
@@ -736,36 +739,49 @@
                 import('/static/slab/footer.js?v=' + SLAB_VERSION),
                 import('/static/slab/forge.js?v=' + SLAB_VERSION),
                 import('/static/slab/sheet.js?v=' + SLAB_VERSION),
-                import('/static/slab/papiro.js?v=' + SLAB_VERSION),
+                import('/static/slab/parchment.js?v=' + SLAB_VERSION),
             ]).then((modules) => registerFonts(modules[2]));
         } catch (error) {
             console.error('slab: the components failed to load', error);
             return;
         }
 
-        /* Per-load imperfection: hand the papyrus a fresh scatter of
-           tone patches (slab param anchors on <gl-papiro>), so no two
-           visits age the same way. Slab owns the paint — this only moves
-           anchors; no SVG, no CSS lines. */
-        const papiro = document.querySelector('gl-papiro');
-        if (papiro) {
+        /* Per-load imperfection: hand the parchment a fresh scatter of
+           tone patches AND the whole detail tangle (108 fiber/fleck/
+           foxing anchors on <gl-parchment>), so no two visits look the
+           same. Slab owns the paint — this only moves anchors; no SVG,
+           no CSS lines. */
+        const parchment = document.querySelector('gl-parchment');
+        if (parchment) {
             const rand = (min, max) => Math.round(min + Math.random() * (max - min));
             const vw = window.innerWidth;
             const vh = window.innerHeight;
             // Mottle patches drift inside the viewport but may hang off
             // an edge, like real stains that started beyond the sheet.
-            papiro.m1x = rand(-160, Math.max(-40, vw - 640));
-            papiro.m1y = rand(-120, Math.max(-40, vh - 420));
-            papiro.m2x = rand(-120, Math.max(-40, vw - 560));
-            papiro.m2y = rand(-80, Math.max(-40, vh - 520));
-            papiro.m3x = rand(-180, Math.max(-40, vw - 560));
-            papiro.m3y = rand(-60, Math.max(-40, vh - 460));
-            papiro.m4x = rand(-140, Math.max(-40, vw - 460));
-            papiro.m4y = rand(-140, Math.max(-40, vh - 400));
-            papiro.m5x = rand(-180, Math.max(-40, vw - 560));
-            papiro.m5y = rand(-140, Math.max(-40, vh - 380));
-            papiro.m6x = rand(-80, Math.max(-40, vw - 480));
-            papiro.m6y = rand(-60, Math.max(-40, vh - 420));
+            parchment.m1x = rand(-160, Math.max(-40, vw - 640));
+            parchment.m1y = rand(-120, Math.max(-40, vh - 420));
+            parchment.m2x = rand(-120, Math.max(-40, vw - 560));
+            parchment.m2y = rand(-80, Math.max(-40, vh - 520));
+            parchment.m3x = rand(-180, Math.max(-40, vw - 560));
+            parchment.m3y = rand(-60, Math.max(-40, vh - 460));
+            parchment.m4x = rand(-140, Math.max(-40, vw - 460));
+            parchment.m4y = rand(-140, Math.max(-40, vh - 400));
+            parchment.m5x = rand(-180, Math.max(-40, vw - 560));
+            parchment.m5y = rand(-140, Math.max(-40, vh - 380));
+            parchment.m6x = rand(-80, Math.max(-40, vw - 480));
+            parchment.m6y = rand(-60, Math.max(-40, vh - 420));
+            parchment.m7x = rand(-160, Math.max(-40, vw - 420));
+            parchment.m7y = rand(-120, Math.max(-40, vh - 300));
+            parchment.m8x = rand(-200, Math.max(-40, vw - 620));
+            parchment.m8y = rand(-180, Math.max(-40, vh - 460));
+            parchment.m9x = rand(-60, Math.max(-40, vw - 700));
+            parchment.m9y = rand(-120, Math.max(-40, vh - 420));
+            // The detail tangle: every fiber, fleck and foxing bloom is
+            // re-aimed, so the scatter never repeats between visits.
+            for (let i = 0; i < PARCHMENT_MARKS; i += 1) {
+                parchment['d' + i + 'x'] = rand(-240, vw - 40);
+                parchment['d' + i + 'y'] = rand(-160, vh - 40);
+            }
         }
 
         state.shell = document.querySelector('gl-shell');

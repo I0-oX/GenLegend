@@ -62,18 +62,18 @@
    min-height: 100vh;
    /* Stack its own background BELOW its negative-z children: without a
       context here, body's background paints in step 3 of the root context
-      and covers <gl-papiro> (z:-2) entirely. */
+      and covers <gl-parchment> (z:-2) entirely. */
    position: relative;
    z-index: 0;
    background-color: #cfb183;
    color: #2b1e12;
   }
 
-  /* The papyrus sheet body is a slab component (app/slab/papiro.slab →
-     <gl-papiro>): belly wash, procedural grain and age stains. Fixed full
+  /* The papyrus sheet body is a slab component (app/slab/parchment.slab →
+     <gl-parchment>): belly wash, procedural grain and age stains. Fixed full
      viewport behind all content and never hit-testable — a hit-testable
      backdrop would swallow every click on the page. */
-  gl-papiro {
+  gl-parchment {
    position: fixed;
    inset: 0;
    z-index: -2;
@@ -82,7 +82,7 @@
   }
 
   /* The whole ground — strips, mottle, foxing, burns, vignette — is slab
-     now (app/slab/papiro.slab → <gl-papiro>); app.js re-scatters its
+     now (app/slab/parchment.slab → <gl-parchment>); app.js re-scatters its
      anchors per load. This <style> block keeps only legacy content
      overrides; no ruled CSS lines remain. */
   /* Welcome / tablet chrome is gone: <gl-forge> owns the whole home, and
@@ -130,9 +130,9 @@
 </head>
 <body>
   <!-- The papyrus sheet body itself: procedural slab wash + grain
-       (app/slab/papiro.slab → <gl-papiro>). Fixed full viewport behind all
+       (app/slab/parchment.slab → <gl-parchment>). Fixed full viewport behind all
        content; pointer-events:none so it can never eat a click. -->
-  <gl-papiro></gl-papiro>
+  <gl-parchment></gl-parchment>
 
   <!-- The summon loader overlay (AtlasVenustas/Tools_of_Loader.py). -->
   <div id="loader" aria-live="polite" aria-busy="true">

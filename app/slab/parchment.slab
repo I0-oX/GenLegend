@@ -1,0 +1,488 @@
+// gl-parchment — the parchment ground body, painted entirely in slab.
+//
+// Reference (user's photo, palette sampled from it): center #AE8C56,
+// edges #74400F, dominant ochres #BA9752 #8F5F1E #AB884B #A97B38
+// #C4A463 #B68C47 #6D3E0E #9A7439. The surface is CLOUD MOTTLED —
+// soft masses at several scales, pale and dark — inside a strong dark
+// frame on all four edges. No fibers dominate: detail = mottling.
+//
+// Procedural (user: "que tambien sea el pergamino dnd procedural"):
+//   * Every mark carries its own anchor (d<i>x/d<i>y + the m washes);
+//     app.js re-aims all {DETAIL} anchors per load, so the mottle never
+//     repeats between visits.
+//   * slab cannot position per-item marks from def/each (offset rejects
+//     def-local props), so each mark is a literal child + doc param.
+//   * No crisp ruled seams: strip structure = wide soft jittered bands
+//     at clashing tilts; texture = slab grain only, amount kept low.
+
+tokens {
+  fx {
+    // Warm ochre body: sampled center, deep umber at the corners.
+    parchment { bg radial(#CDAB64 0%, #BE9851 42%, #9B7439 72%, #74400F 100%); grain 0.085 }
+
+    // Strip tone: broad soft bands, irregular stops, faint tilt.
+    tiras1  {
+      bg linear(179.15,
+        #E8D49A00 0%, #E8D49A12 3.5%, #8F5F1E00 8%, #8F5F1E14 10.5%,
+        #E8D49A00 15%, #E8D49A10 19.5%, #8F5F1E00 24.5%, #8F5F1E12 27%,
+        #E8D49A00 33%, #E8D49A11 37.5%, #8F5F1E00 43%, #8F5F1E14 46.5%,
+        #E8D49A00 52%, #E8D49A0F 57%, #8F5F1E00 63%, #8F5F1E12 66%,
+        #E8D49A00 72%, #E8D49A10 77.5%, #8F5F1E00 83%, #8F5F1E11 86.5%,
+        #E8D49A00 92%, #E8D49A0A 96.5%, #E8D49A00 100%);
+      grain 0.03
+    }
+    tiras2  {
+      bg linear(-178.85,
+        #8F5F1E00 0%, #8F5F1E12 6.5%, #8F5F1E00 13.5%,
+        #E8D49A00 21%, #E8D49A0C 26%, #E8D49A00 32%,
+        #8F5F1E00 41%, #8F5F1E12 47%, #8F5F1E00 54%,
+        #E8D49A00 63%, #E8D49A0B 69%, #E8D49A00 76%,
+        #8F5F1E00 85%, #8F5F1E10 91%, #8F5F1E00 100%);
+      grain 0.025
+    }
+    // Cross-fiber layer: the second plant layer runs ~90 degrees to
+    // the strips — near-vertical, barely there.
+    tiras3  {
+      bg linear(88.7,
+        #E8D49A00 0%, #E8D49A06 5%, #8F5F1E00 11%, #8F5F1E05 15.5%,
+        #E8D49A00 21%, #E8D49A05 26.5%, #8F5F1E00 33%, #8F5F1E04 37%,
+        #E8D49A00 43%, #E8D49A06 48.5%, #8F5F1E00 55%, #8F5F1E05 59.5%,
+        #E8D49A00 65%, #E8D49A05 71%, #8F5F1E00 78%, #8F5F1E04 82.5%,
+        #E8D49A00 89%, #E8D49A05 94%, #8F5F1E00 100%);
+      grain 0.02
+    }
+
+    // Warm pool of light over the middle of the sheet.
+    pool   { bg radial(#F0D89400 18%, #F0D8941E 46%, #F0D89400 74%) }
+    sheen  { bg linear(112, #E8D49A00 22%, #E8D49A0F 46%, #E8D49A00 64%) }
+    velo   { bg #E8D49A06; grain 0.05,2 }
+
+    // Old ring from a cup set on the sheet — thin, partial, off-center.
+    anillo { bg radial(#00000000 44%, rgba(110, 70, 26, 0.15) 60%, #00000000 78%) }
+
+    // Foxing: rust, not soot. Small, warm, soft-edged.
+    foxing  { bg radial(rgba(140, 82, 30, 0.50) 0%, rgba(140, 82, 30, 0) 70%) }
+    foxingL { bg radial(rgba(150, 96, 38, 0.28) 0%, rgba(150, 96, 38, 0) 72%) }
+
+    // Corner shadow: warm and deep — the reference's dark frame.
+    vig { bg radial(#5E330B00 46%, #5E330B91 100%) }
+  }
+}
+
+params {
+  // broad wash anchors — app.js scatters them per load
+  m1x num = 180;  m1y num = 40
+  m2x num = 560;  m2y num = 300
+  m3x num = 120;  m3y num = 420
+  m4x num = 640;  m4y num = -60
+  m5x num = 40;   m5y num = -40
+  m6x num = 880;  m6y num = 480
+  m7x num = 700;  m7y num = 200
+  m8x num = 260;  m8y num = 620
+  m9x num = 1020; m9y num = 120
+  // 244 detail marks (clouds, splotches, fibers, flecks) — d<i>x/d<i>y
+  // every one re-aimed per load by app.js
+  d0x num = 0; d0y num = 0  d1x num = 0; d1y num = 0
+  d2x num = 0; d2y num = 0  d3x num = 0; d3y num = 0
+  d4x num = 0; d4y num = 0  d5x num = 0; d5y num = 0
+  d6x num = 0; d6y num = 0  d7x num = 0; d7y num = 0
+  d8x num = 0; d8y num = 0  d9x num = 0; d9y num = 0
+  d10x num = 0; d10y num = 0  d11x num = 0; d11y num = 0
+  d12x num = 0; d12y num = 0  d13x num = 0; d13y num = 0
+  d14x num = 0; d14y num = 0  d15x num = 0; d15y num = 0
+  d16x num = 0; d16y num = 0  d17x num = 0; d17y num = 0
+  d18x num = 0; d18y num = 0  d19x num = 0; d19y num = 0
+  d20x num = 0; d20y num = 0  d21x num = 0; d21y num = 0
+  d22x num = 0; d22y num = 0  d23x num = 0; d23y num = 0
+  d24x num = 0; d24y num = 0  d25x num = 0; d25y num = 0
+  d26x num = 0; d26y num = 0  d27x num = 0; d27y num = 0
+  d28x num = 0; d28y num = 0  d29x num = 0; d29y num = 0
+  d30x num = 0; d30y num = 0  d31x num = 0; d31y num = 0
+  d32x num = 0; d32y num = 0  d33x num = 0; d33y num = 0
+  d34x num = 0; d34y num = 0  d35x num = 0; d35y num = 0
+  d36x num = 0; d36y num = 0  d37x num = 0; d37y num = 0
+  d38x num = 0; d38y num = 0  d39x num = 0; d39y num = 0
+  d40x num = 0; d40y num = 0  d41x num = 0; d41y num = 0
+  d42x num = 0; d42y num = 0  d43x num = 0; d43y num = 0
+  d44x num = 0; d44y num = 0  d45x num = 0; d45y num = 0
+  d46x num = 0; d46y num = 0  d47x num = 0; d47y num = 0
+  d48x num = 0; d48y num = 0  d49x num = 0; d49y num = 0
+  d50x num = 0; d50y num = 0  d51x num = 0; d51y num = 0
+  d52x num = 0; d52y num = 0  d53x num = 0; d53y num = 0
+  d54x num = 0; d54y num = 0  d55x num = 0; d55y num = 0
+  d56x num = 0; d56y num = 0  d57x num = 0; d57y num = 0
+  d58x num = 0; d58y num = 0  d59x num = 0; d59y num = 0
+  d60x num = 0; d60y num = 0  d61x num = 0; d61y num = 0
+  d62x num = 0; d62y num = 0  d63x num = 0; d63y num = 0
+  d64x num = 0; d64y num = 0  d65x num = 0; d65y num = 0
+  d66x num = 0; d66y num = 0  d67x num = 0; d67y num = 0
+  d68x num = 0; d68y num = 0  d69x num = 0; d69y num = 0
+  d70x num = 0; d70y num = 0  d71x num = 0; d71y num = 0
+  d72x num = 0; d72y num = 0  d73x num = 0; d73y num = 0
+  d74x num = 0; d74y num = 0  d75x num = 0; d75y num = 0
+  d76x num = 0; d76y num = 0  d77x num = 0; d77y num = 0
+  d78x num = 0; d78y num = 0  d79x num = 0; d79y num = 0
+  d80x num = 0; d80y num = 0  d81x num = 0; d81y num = 0
+  d82x num = 0; d82y num = 0  d83x num = 0; d83y num = 0
+  d84x num = 0; d84y num = 0  d85x num = 0; d85y num = 0
+  d86x num = 0; d86y num = 0  d87x num = 0; d87y num = 0
+  d88x num = 0; d88y num = 0  d89x num = 0; d89y num = 0
+  d90x num = 0; d90y num = 0  d91x num = 0; d91y num = 0
+  d92x num = 0; d92y num = 0  d93x num = 0; d93y num = 0
+  d94x num = 0; d94y num = 0  d95x num = 0; d95y num = 0
+  d96x num = 0; d96y num = 0  d97x num = 0; d97y num = 0
+  d98x num = 0; d98y num = 0  d99x num = 0; d99y num = 0
+  d100x num = 0; d100y num = 0  d101x num = 0; d101y num = 0
+  d102x num = 0; d102y num = 0  d103x num = 0; d103y num = 0
+  d104x num = 0; d104y num = 0  d105x num = 0; d105y num = 0
+  d106x num = 0; d106y num = 0  d107x num = 0; d107y num = 0
+  d108x num = 0; d108y num = 0  d109x num = 0; d109y num = 0
+  d110x num = 0; d110y num = 0  d111x num = 0; d111y num = 0
+  d112x num = 0; d112y num = 0  d113x num = 0; d113y num = 0
+  d114x num = 0; d114y num = 0  d115x num = 0; d115y num = 0
+  d116x num = 0; d116y num = 0  d117x num = 0; d117y num = 0
+  d118x num = 0; d118y num = 0  d119x num = 0; d119y num = 0
+  d120x num = 0; d120y num = 0  d121x num = 0; d121y num = 0
+  d122x num = 0; d122y num = 0  d123x num = 0; d123y num = 0
+  d124x num = 0; d124y num = 0  d125x num = 0; d125y num = 0
+  d126x num = 0; d126y num = 0  d127x num = 0; d127y num = 0
+  d128x num = 0; d128y num = 0  d129x num = 0; d129y num = 0
+  d130x num = 0; d130y num = 0  d131x num = 0; d131y num = 0
+  d132x num = 0; d132y num = 0  d133x num = 0; d133y num = 0
+  d134x num = 0; d134y num = 0  d135x num = 0; d135y num = 0
+  d136x num = 0; d136y num = 0  d137x num = 0; d137y num = 0
+  d138x num = 0; d138y num = 0  d139x num = 0; d139y num = 0
+  d140x num = 0; d140y num = 0  d141x num = 0; d141y num = 0
+  d142x num = 0; d142y num = 0  d143x num = 0; d143y num = 0
+  d144x num = 0; d144y num = 0  d145x num = 0; d145y num = 0
+  d146x num = 0; d146y num = 0  d147x num = 0; d147y num = 0
+  d148x num = 0; d148y num = 0  d149x num = 0; d149y num = 0
+  d150x num = 0; d150y num = 0  d151x num = 0; d151y num = 0
+  d152x num = 0; d152y num = 0  d153x num = 0; d153y num = 0
+  d154x num = 0; d154y num = 0  d155x num = 0; d155y num = 0
+  d156x num = 0; d156y num = 0  d157x num = 0; d157y num = 0
+  d158x num = 0; d158y num = 0  d159x num = 0; d159y num = 0
+  d160x num = 0; d160y num = 0  d161x num = 0; d161y num = 0
+  d162x num = 0; d162y num = 0  d163x num = 0; d163y num = 0
+  d164x num = 0; d164y num = 0  d165x num = 0; d165y num = 0
+  d166x num = 0; d166y num = 0  d167x num = 0; d167y num = 0
+  d168x num = 0; d168y num = 0  d169x num = 0; d169y num = 0
+  d170x num = 0; d170y num = 0  d171x num = 0; d171y num = 0
+  d172x num = 0; d172y num = 0  d173x num = 0; d173y num = 0
+  d174x num = 0; d174y num = 0  d175x num = 0; d175y num = 0
+  d176x num = 0; d176y num = 0  d177x num = 0; d177y num = 0
+  d178x num = 0; d178y num = 0  d179x num = 0; d179y num = 0
+  d180x num = 0; d180y num = 0  d181x num = 0; d181y num = 0
+  d182x num = 0; d182y num = 0  d183x num = 0; d183y num = 0
+  d184x num = 0; d184y num = 0  d185x num = 0; d185y num = 0
+  d186x num = 0; d186y num = 0  d187x num = 0; d187y num = 0
+  d188x num = 0; d188y num = 0  d189x num = 0; d189y num = 0
+  d190x num = 0; d190y num = 0  d191x num = 0; d191y num = 0
+  d192x num = 0; d192y num = 0  d193x num = 0; d193y num = 0
+  d194x num = 0; d194y num = 0  d195x num = 0; d195y num = 0
+  d196x num = 0; d196y num = 0  d197x num = 0; d197y num = 0
+  d198x num = 0; d198y num = 0  d199x num = 0; d199y num = 0
+  d200x num = 0; d200y num = 0  d201x num = 0; d201y num = 0
+  d202x num = 0; d202y num = 0  d203x num = 0; d203y num = 0
+  d204x num = 0; d204y num = 0  d205x num = 0; d205y num = 0
+  d206x num = 0; d206y num = 0  d207x num = 0; d207y num = 0
+  d208x num = 0; d208y num = 0  d209x num = 0; d209y num = 0
+  d210x num = 0; d210y num = 0  d211x num = 0; d211y num = 0
+  d212x num = 0; d212y num = 0  d213x num = 0; d213y num = 0
+  d214x num = 0; d214y num = 0  d215x num = 0; d215y num = 0
+  d216x num = 0; d216y num = 0  d217x num = 0; d217y num = 0
+  d218x num = 0; d218y num = 0  d219x num = 0; d219y num = 0
+  d220x num = 0; d220y num = 0  d221x num = 0; d221y num = 0
+  d222x num = 0; d222y num = 0  d223x num = 0; d223y num = 0
+  d224x num = 0; d224y num = 0  d225x num = 0; d225y num = 0
+  d226x num = 0; d226y num = 0  d227x num = 0; d227y num = 0
+  d228x num = 0; d228y num = 0  d229x num = 0; d229y num = 0
+  d230x num = 0; d230y num = 0  d231x num = 0; d231y num = 0
+  d232x num = 0; d232y num = 0  d233x num = 0; d233y num = 0
+  d234x num = 0; d234y num = 0  d235x num = 0; d235y num = 0
+  d236x num = 0; d236y num = 0  d237x num = 0; d237y num = 0
+  d238x num = 0; d238y num = 0  d239x num = 0; d239y num = 0
+  d240x num = 0; d240y num = 0  d241x num = 0; d241y num = 0
+  d242x num = 0; d242y num = 0  d243x num = 0; d243y num = 0
+  }
+
+stack w=fill h=fill style=fx.parchment {
+  // strip tone, two clashing tilts -> organic interference, no hard lines
+  rect w=fill h=fill style=fx.tiras1
+  rect w=fill h=fill style=fx.tiras2
+  rect w=fill h=fill style=fx.tiras3
+
+  // broad washes (m anchors, re-aimed per load)
+  rect w=980 h=700 rotate=-6 offset=param.m1x,param.m1y self=top-start bg=radial(#A9702418 0%, #A9702418 30%, #A9702400 76%)
+  rect w=1120 h=780 rotate=8 offset=param.m2x,param.m2y self=top-start bg=radial(#9A652214 0%, #9A652214 32%, #9A652200 76%)
+  rect w=820 h=620 rotate=14 offset=param.m4x,param.m4y self=top-start bg=radial(#7E4C1833 0%, #7E4C1833 20%, #7E4C1800 76%)
+  rect w=860 h=640 rotate=-9 offset=param.m5x,param.m5y self=top-start bg=radial(#8E5C1E2E 0%, #8E5C1E2E 20%, #8E5C1E00 76%)
+  rect w=760 h=560 rotate=19 offset=param.m6x,param.m6y self=top-start bg=radial(#86521C29 0%, #86521C29 18%, #86521C00 76%)
+  rect w=1040 h=740 rotate=-15 offset=param.m8x,param.m8y self=top-start bg=radial(#8A5A1E14 0%, #8A5A1E14 34%, #8A5A1E00 76%)
+  rect w=900 h=620 rotate=6 offset=param.m9x,param.m9y self=top-start bg=radial(#8A5A1E12 0%, #8A5A1E12 32%, #8A5A1E00 76%)
+  rect w=720 h=540 rotate=-11 offset=param.m3x,param.m3y self=top-start bg=radial(#FFEFC023 0%, #FFEFC023 30%, #FFEFC000 76%)
+  rect w=660 h=480 rotate=-24 offset=param.m7x,param.m7y self=top-start bg=radial(#FFEFC01B 0%, #FFEFC01B 30%, #FFEFC000 76%)
+
+  // cup ring, off-center and not quite closed
+  rect w=520 h=400 offset=640,260 self=top-start style=fx.anillo
+
+  // ---- the procedural mottle: clouds, splotches, stains, fibers
+  rect w=632 h=407 rotate=-29 offset=param.d0x,param.d0y self=top-start bg=radial(#A97B3860 0%, #A97B3860 26%, #A97B3800 70%)
+  rect w=584 h=480 rotate=-19 offset=param.d1x,param.d1y self=top-start bg=radial(#BA975260 0%, #BA975260 29%, #BA975200 70%)
+  rect w=660 h=420 rotate=-21 offset=param.d2x,param.d2y self=top-start bg=radial(#BA975260 0%, #BA975260 29%, #BA975200 70%)
+  rect w=433 h=404 rotate=2 offset=param.d3x,param.d3y self=top-start bg=radial(#B68C476B 0%, #B68C476B 19%, #B68C4700 70%)
+  rect w=482 h=427 rotate=15 offset=param.d4x,param.d4y self=top-start bg=radial(#A97B386B 0%, #A97B386B 21%, #A97B3800 70%)
+  rect w=451 h=480 rotate=-9 offset=param.d5x,param.d5y self=top-start bg=radial(#AB884B6B 0%, #AB884B6B 24%, #AB884B00 70%)
+  rect w=684 h=512 rotate=13 offset=param.d6x,param.d6y self=top-start bg=radial(#A97B387A 0%, #A97B387A 26%, #A97B3800 70%)
+  rect w=584 h=497 rotate=20 offset=param.d7x,param.d7y self=top-start bg=radial(#A97B386B 0%, #A97B386B 25%, #A97B3800 70%)
+  rect w=557 h=565 rotate=-25 offset=param.d8x,param.d8y self=top-start bg=radial(#B68C4760 0%, #B68C4760 29%, #B68C4700 70%)
+  rect w=505 h=425 rotate=28 offset=param.d9x,param.d9y self=top-start bg=radial(#B68C477A 0%, #B68C477A 29%, #B68C4700 70%)
+  rect w=463 h=391 rotate=16 offset=param.d10x,param.d10y self=top-start bg=radial(#A97B387A 0%, #A97B387A 27%, #A97B3800 70%)
+  rect w=661 h=457 rotate=1 offset=param.d11x,param.d11y self=top-start bg=radial(#A97B386B 0%, #A97B386B 17%, #A97B3800 70%)
+  rect w=632 h=618 rotate=25 offset=param.d12x,param.d12y self=top-start bg=radial(#AB884B7A 0%, #AB884B7A 21%, #AB884B00 70%)
+  rect w=606 h=450 rotate=3 offset=param.d13x,param.d13y self=top-start bg=radial(#B68C477A 0%, #B68C477A 16%, #B68C4700 70%)
+  rect w=450 h=613 rotate=-17 offset=param.d14x,param.d14y self=top-start bg=radial(#BA97526B 0%, #BA97526B 27%, #BA975200 70%)
+  rect w=432 h=559 rotate=8 offset=param.d15x,param.d15y self=top-start bg=radial(#B68C4760 0%, #B68C4760 20%, #B68C4700 70%)
+  rect w=779 h=559 rotate=1 offset=param.d16x,param.d16y self=top-start bg=radial(#B68C476B 0%, #B68C476B 27%, #B68C4700 70%)
+  rect w=545 h=423 rotate=21 offset=param.d17x,param.d17y self=top-start bg=radial(#BA97527A 0%, #BA97527A 30%, #BA975200 70%)
+  rect w=678 h=534 rotate=10 offset=param.d18x,param.d18y self=top-start bg=radial(#AB884B6B 0%, #AB884B6B 29%, #AB884B00 70%)
+  rect w=658 h=531 rotate=12 offset=param.d19x,param.d19y self=top-start bg=radial(#AB884B7A 0%, #AB884B7A 17%, #AB884B00 70%)
+  rect w=432 h=353 rotate=27 offset=param.d20x,param.d20y self=top-start bg=radial(#A97B386B 0%, #A97B386B 15%, #A97B3800 70%)
+  rect w=486 h=446 rotate=-16 offset=param.d21x,param.d21y self=top-start bg=radial(#AB884B7A 0%, #AB884B7A 25%, #AB884B00 70%)
+  rect w=260 h=176 rotate=-18 offset=param.d22x,param.d22y self=top-start bg=radial(#7E501752 0%, #7E501752 24%, #7E501700 70%)
+  rect w=184 h=223 rotate=-1 offset=param.d23x,param.d23y self=top-start bg=radial(#8F5F1E6B 0%, #8F5F1E6B 21%, #8F5F1E00 70%)
+  rect w=395 h=321 rotate=-23 offset=param.d24x,param.d24y self=top-start bg=radial(#7E50176B 0%, #7E50176B 14%, #7E501700 70%)
+  rect w=198 h=189 rotate=-51 offset=param.d25x,param.d25y self=top-start bg=radial(#8F5F1E78 0%, #8F5F1E78 13%, #8F5F1E00 70%)
+  rect w=371 h=262 rotate=-23 offset=param.d26x,param.d26y self=top-start bg=radial(#8F5F1E78 0%, #8F5F1E78 23%, #8F5F1E00 70%)
+  rect w=357 h=292 rotate=-27 offset=param.d27x,param.d27y self=top-start bg=radial(#6D3E0E6B 0%, #6D3E0E6B 24%, #6D3E0E00 70%)
+  rect w=214 h=272 rotate=-45 offset=param.d28x,param.d28y self=top-start bg=radial(#6D3E0E5E 0%, #6D3E0E5E 17%, #6D3E0E00 70%)
+  rect w=308 h=252 rotate=-55 offset=param.d29x,param.d29y self=top-start bg=radial(#7E501778 0%, #7E501778 22%, #7E501700 70%)
+  rect w=288 h=197 rotate=-6 offset=param.d30x,param.d30y self=top-start bg=radial(#7E50176B 0%, #7E50176B 10%, #7E501700 70%)
+  rect w=307 h=160 rotate=14 offset=param.d31x,param.d31y self=top-start bg=radial(#8F5F1E52 0%, #8F5F1E52 22%, #8F5F1E00 70%)
+  rect w=213 h=186 rotate=12 offset=param.d32x,param.d32y self=top-start bg=radial(#7E501752 0%, #7E501752 17%, #7E501700 70%)
+  rect w=236 h=241 rotate=56 offset=param.d33x,param.d33y self=top-start bg=radial(#7E50175E 0%, #7E50175E 19%, #7E501700 70%)
+  rect w=353 h=211 rotate=-15 offset=param.d34x,param.d34y self=top-start bg=radial(#8F5F1E78 0%, #8F5F1E78 19%, #8F5F1E00 70%)
+  rect w=368 h=195 rotate=44 offset=param.d35x,param.d35y self=top-start bg=radial(#6D3E0E5E 0%, #6D3E0E5E 24%, #6D3E0E00 70%)
+  rect w=364 h=185 rotate=11 offset=param.d36x,param.d36y self=top-start bg=radial(#8F5F1E5E 0%, #8F5F1E5E 12%, #8F5F1E00 70%)
+  rect w=347 h=177 rotate=-8 offset=param.d37x,param.d37y self=top-start bg=radial(#7E50176B 0%, #7E50176B 14%, #7E501700 70%)
+  rect w=181 h=233 rotate=56 offset=param.d38x,param.d38y self=top-start bg=radial(#6D3E0E5E 0%, #6D3E0E5E 23%, #6D3E0E00 70%)
+  rect w=217 h=321 rotate=66 offset=param.d39x,param.d39y self=top-start bg=radial(#8F5F1E78 0%, #8F5F1E78 26%, #8F5F1E00 70%)
+  rect w=327 h=263 rotate=60 offset=param.d40x,param.d40y self=top-start bg=radial(#8F5F1E52 0%, #8F5F1E52 12%, #8F5F1E00 70%)
+  rect w=397 h=188 rotate=47 offset=param.d41x,param.d41y self=top-start bg=radial(#6D3E0E6B 0%, #6D3E0E6B 19%, #6D3E0E00 70%)
+  rect w=248 h=202 rotate=41 offset=param.d42x,param.d42y self=top-start bg=radial(#7E501752 0%, #7E501752 19%, #7E501700 70%)
+  rect w=182 h=211 rotate=-1 offset=param.d43x,param.d43y self=top-start bg=radial(#7E501752 0%, #7E501752 13%, #7E501700 70%)
+  rect w=300 h=322 rotate=44 offset=param.d44x,param.d44y self=top-start bg=radial(#8F5F1E5E 0%, #8F5F1E5E 20%, #8F5F1E00 70%)
+  rect w=348 h=214 rotate=-1 offset=param.d45x,param.d45y self=top-start bg=radial(#6D3E0E6B 0%, #6D3E0E6B 21%, #6D3E0E00 70%)
+  rect w=294 h=163 rotate=10 offset=param.d46x,param.d46y self=top-start bg=radial(#6D3E0E52 0%, #6D3E0E52 21%, #6D3E0E00 70%)
+  rect w=267 h=185 rotate=-25 offset=param.d47x,param.d47y self=top-start bg=radial(#7E50175E 0%, #7E50175E 18%, #7E501700 70%)
+  rect w=390 h=227 rotate=45 offset=param.d48x,param.d48y self=top-start bg=radial(#6D3E0E5E 0%, #6D3E0E5E 10%, #6D3E0E00 70%)
+  rect w=330 h=169 rotate=26 offset=param.d49x,param.d49y self=top-start bg=radial(#6D3E0E5E 0%, #6D3E0E5E 15%, #6D3E0E00 70%)
+  rect w=314 h=182 rotate=-29 offset=param.d50x,param.d50y self=top-start bg=radial(#8F5F1E5E 0%, #8F5F1E5E 13%, #8F5F1E00 70%)
+  rect w=249 h=285 rotate=3 offset=param.d51x,param.d51y self=top-start bg=radial(#7E50175E 0%, #7E50175E 12%, #7E501700 70%)
+  rect w=303 h=272 rotate=-44 offset=param.d52x,param.d52y self=top-start bg=radial(#8F5F1E5E 0%, #8F5F1E5E 17%, #8F5F1E00 70%)
+  rect w=299 h=207 rotate=46 offset=param.d53x,param.d53y self=top-start bg=radial(#6D3E0E78 0%, #6D3E0E78 22%, #6D3E0E00 70%)
+  rect w=345 h=166 rotate=64 offset=param.d54x,param.d54y self=top-start bg=radial(#8F5F1E6B 0%, #8F5F1E6B 13%, #8F5F1E00 70%)
+  rect w=297 h=199 rotate=-31 offset=param.d55x,param.d55y self=top-start bg=radial(#6D3E0E78 0%, #6D3E0E78 16%, #6D3E0E00 70%)
+  rect w=266 h=151 rotate=-4 offset=param.d56x,param.d56y self=top-start bg=radial(#6D3E0E6B 0%, #6D3E0E6B 15%, #6D3E0E00 70%)
+  rect w=303 h=338 rotate=-26 offset=param.d57x,param.d57y self=top-start bg=radial(#8F5F1E78 0%, #8F5F1E78 20%, #8F5F1E00 70%)
+  rect w=237 h=289 rotate=-67 offset=param.d58x,param.d58y self=top-start bg=radial(#6D3E0E52 0%, #6D3E0E52 12%, #6D3E0E00 70%)
+  rect w=210 h=152 rotate=18 offset=param.d59x,param.d59y self=top-start bg=radial(#7E501752 0%, #7E501752 21%, #7E501700 70%)
+  rect w=387 h=157 rotate=47 offset=param.d60x,param.d60y self=top-start bg=radial(#6D3E0E6B 0%, #6D3E0E6B 20%, #6D3E0E00 70%)
+  rect w=390 h=216 rotate=38 offset=param.d61x,param.d61y self=top-start bg=radial(#8F5F1E6B 0%, #8F5F1E6B 24%, #8F5F1E00 70%)
+  rect w=337 h=182 rotate=7 offset=param.d62x,param.d62y self=top-start bg=radial(#6D3E0E52 0%, #6D3E0E52 25%, #6D3E0E00 70%)
+  rect w=390 h=230 rotate=41 offset=param.d63x,param.d63y self=top-start bg=radial(#7E501752 0%, #7E501752 12%, #7E501700 70%)
+  rect w=253 h=326 rotate=-49 offset=param.d64x,param.d64y self=top-start bg=radial(#6D3E0E6B 0%, #6D3E0E6B 25%, #6D3E0E00 70%)
+  rect w=347 h=338 rotate=59 offset=param.d65x,param.d65y self=top-start bg=radial(#6D3E0E78 0%, #6D3E0E78 11%, #6D3E0E00 70%)
+  rect w=222 h=87 rotate=-46 offset=param.d66x,param.d66y self=top-start bg=radial(#6D3E0EA6 0%, #6D3E0EA6 18%, #6D3E0E00 70%)
+  rect w=129 h=172 rotate=-10 offset=param.d67x,param.d67y self=top-start bg=radial(#8F5F1E7A 0%, #8F5F1E7A 13%, #8F5F1E00 70%)
+  rect w=223 h=85 rotate=-14 offset=param.d68x,param.d68y self=top-start bg=radial(#7E50178A 0%, #7E50178A 10%, #7E501700 70%)
+  rect w=172 h=167 rotate=-11 offset=param.d69x,param.d69y self=top-start bg=radial(#7E5017A6 0%, #7E5017A6 11%, #7E501700 70%)
+  rect w=192 h=111 rotate=56 offset=param.d70x,param.d70y self=top-start bg=radial(#7E50177A 0%, #7E50177A 18%, #7E501700 70%)
+  rect w=95 h=73 rotate=21 offset=param.d71x,param.d71y self=top-start bg=radial(#7E50178A 0%, #7E50178A 7%, #7E501700 70%)
+  rect w=224 h=69 rotate=47 offset=param.d72x,param.d72y self=top-start bg=radial(#6D3E0E99 0%, #6D3E0E99 20%, #6D3E0E00 70%)
+  rect w=128 h=103 rotate=28 offset=param.d73x,param.d73y self=top-start bg=radial(#8F5F1E8A 0%, #8F5F1E8A 9%, #8F5F1E00 70%)
+  rect w=111 h=148 rotate=25 offset=param.d74x,param.d74y self=top-start bg=radial(#7E5017A6 0%, #7E5017A6 20%, #7E501700 70%)
+  rect w=150 h=188 rotate=-60 offset=param.d75x,param.d75y self=top-start bg=radial(#8F5F1EA6 0%, #8F5F1EA6 13%, #8F5F1E00 70%)
+  rect w=198 h=166 rotate=-66 offset=param.d76x,param.d76y self=top-start bg=radial(#7E50178A 0%, #7E50178A 8%, #7E501700 70%)
+  rect w=158 h=148 rotate=-11 offset=param.d77x,param.d77y self=top-start bg=radial(#8F5F1EA6 0%, #8F5F1EA6 16%, #8F5F1E00 70%)
+  rect w=79 h=152 rotate=-34 offset=param.d78x,param.d78y self=top-start bg=radial(#6D3E0EA6 0%, #6D3E0EA6 20%, #6D3E0E00 70%)
+  rect w=111 h=146 rotate=-75 offset=param.d79x,param.d79y self=top-start bg=radial(#6D3E0E8A 0%, #6D3E0E8A 20%, #6D3E0E00 70%)
+  rect w=131 h=113 rotate=37 offset=param.d80x,param.d80y self=top-start bg=radial(#6D3E0EA6 0%, #6D3E0EA6 7%, #6D3E0E00 70%)
+  rect w=85 h=99 rotate=78 offset=param.d81x,param.d81y self=top-start bg=radial(#7E50178A 0%, #7E50178A 18%, #7E501700 70%)
+  rect w=195 h=104 rotate=-70 offset=param.d82x,param.d82y self=top-start bg=radial(#7E50177A 0%, #7E50177A 6%, #7E501700 70%)
+  rect w=221 h=163 rotate=-49 offset=param.d83x,param.d83y self=top-start bg=radial(#7E50178A 0%, #7E50178A 13%, #7E501700 70%)
+  rect w=157 h=128 rotate=-49 offset=param.d84x,param.d84y self=top-start bg=radial(#8F5F1EA6 0%, #8F5F1EA6 15%, #8F5F1E00 70%)
+  rect w=142 h=165 rotate=5 offset=param.d85x,param.d85y self=top-start bg=radial(#6D3E0E7A 0%, #6D3E0E7A 17%, #6D3E0E00 70%)
+  rect w=78 h=176 rotate=12 offset=param.d86x,param.d86y self=top-start bg=radial(#8F5F1E8A 0%, #8F5F1E8A 15%, #8F5F1E00 70%)
+  rect w=96 h=60 rotate=-78 offset=param.d87x,param.d87y self=top-start bg=radial(#8F5F1E8A 0%, #8F5F1E8A 10%, #8F5F1E00 70%)
+  rect w=134 h=116 rotate=-51 offset=param.d88x,param.d88y self=top-start bg=radial(#8F5F1E7A 0%, #8F5F1E7A 13%, #8F5F1E00 70%)
+  rect w=130 h=86 rotate=32 offset=param.d89x,param.d89y self=top-start bg=radial(#6D3E0E7A 0%, #6D3E0E7A 11%, #6D3E0E00 70%)
+  rect w=71 h=199 rotate=-32 offset=param.d90x,param.d90y self=top-start bg=radial(#6D3E0EA6 0%, #6D3E0EA6 6%, #6D3E0E00 70%)
+  rect w=127 h=94 rotate=79 offset=param.d91x,param.d91y self=top-start bg=radial(#6D3E0EA6 0%, #6D3E0EA6 16%, #6D3E0E00 70%)
+  rect w=203 h=144 rotate=56 offset=param.d92x,param.d92y self=top-start bg=radial(#8F5F1E99 0%, #8F5F1E99 8%, #8F5F1E00 70%)
+  rect w=145 h=85 rotate=-54 offset=param.d93x,param.d93y self=top-start bg=radial(#6D3E0E8A 0%, #6D3E0E8A 8%, #6D3E0E00 70%)
+  rect w=135 h=103 rotate=32 offset=param.d94x,param.d94y self=top-start bg=radial(#6D3E0E7A 0%, #6D3E0E7A 16%, #6D3E0E00 70%)
+  rect w=83 h=96 rotate=46 offset=param.d95x,param.d95y self=top-start bg=radial(#7E50178A 0%, #7E50178A 18%, #7E501700 70%)
+  rect w=105 h=138 rotate=40 offset=param.d96x,param.d96y self=top-start bg=radial(#8F5F1EA6 0%, #8F5F1EA6 17%, #8F5F1E00 70%)
+  rect w=164 h=106 rotate=7 offset=param.d97x,param.d97y self=top-start bg=radial(#8F5F1E7A 0%, #8F5F1E7A 16%, #8F5F1E00 70%)
+  rect w=139 h=177 rotate=-4 offset=param.d98x,param.d98y self=top-start bg=radial(#8F5F1E7A 0%, #8F5F1E7A 13%, #8F5F1E00 70%)
+  rect w=164 h=86 rotate=40 offset=param.d99x,param.d99y self=top-start bg=radial(#8F5F1E8A 0%, #8F5F1E8A 7%, #8F5F1E00 70%)
+  rect w=111 h=190 rotate=-63 offset=param.d100x,param.d100y self=top-start bg=radial(#6D3E0EA6 0%, #6D3E0EA6 15%, #6D3E0E00 70%)
+  rect w=81 h=87 rotate=-68 offset=param.d101x,param.d101y self=top-start bg=radial(#8F5F1E99 0%, #8F5F1E99 7%, #8F5F1E00 70%)
+  rect w=191 h=143 rotate=-57 offset=param.d102x,param.d102y self=top-start bg=radial(#7E501799 0%, #7E501799 11%, #7E501700 70%)
+  rect w=123 h=141 rotate=10 offset=param.d103x,param.d103y self=top-start bg=radial(#6D3E0E7A 0%, #6D3E0E7A 18%, #6D3E0E00 70%)
+  rect w=222 h=87 rotate=-7 offset=param.d104x,param.d104y self=top-start bg=radial(#6D3E0E8A 0%, #6D3E0E8A 6%, #6D3E0E00 70%)
+  rect w=145 h=103 rotate=56 offset=param.d105x,param.d105y self=top-start bg=radial(#7E5017A6 0%, #7E5017A6 10%, #7E501700 70%)
+  rect w=75 h=113 rotate=27 offset=param.d106x,param.d106y self=top-start bg=radial(#6E5F4A7A 0%, #6E5F4A7A 18%, #6E5F4A00 70%)
+  rect w=117 h=143 rotate=-20 offset=param.d107x,param.d107y self=top-start bg=radial(#6E5F4A70 0%, #6E5F4A70 17%, #6E5F4A00 70%)
+  rect w=176 h=118 rotate=-58 offset=param.d108x,param.d108y self=top-start bg=radial(#846F5070 0%, #846F5070 19%, #846F5000 70%)
+  rect w=161 h=157 rotate=72 offset=param.d109x,param.d109y self=top-start bg=radial(#846F507A 0%, #846F507A 21%, #846F5000 70%)
+  rect w=150 h=138 rotate=-6 offset=param.d110x,param.d110y self=top-start bg=radial(#7A6A557A 0%, #7A6A557A 10%, #7A6A5500 70%)
+  rect w=91 h=124 rotate=-17 offset=param.d111x,param.d111y self=top-start bg=radial(#7A6A557A 0%, #7A6A557A 24%, #7A6A5500 70%)
+  rect w=160 h=170 rotate=-50 offset=param.d112x,param.d112y self=top-start bg=radial(#6E5F4A66 0%, #6E5F4A66 24%, #6E5F4A00 70%)
+  rect w=63 h=111 rotate=-75 offset=param.d113x,param.d113y self=top-start bg=radial(#7A6A5566 0%, #7A6A5566 8%, #7A6A5500 70%)
+  rect w=199 h=50 rotate=-22 offset=param.d114x,param.d114y self=top-start bg=radial(#846F5070 0%, #846F5070 17%, #846F5000 70%)
+  rect w=62 h=98 rotate=-27 offset=param.d115x,param.d115y self=top-start bg=radial(#846F5066 0%, #846F5066 21%, #846F5000 70%)
+  rect w=171 h=134 rotate=46 offset=param.d116x,param.d116y self=top-start bg=radial(#6E5F4A70 0%, #6E5F4A70 17%, #6E5F4A00 70%)
+  rect w=143 h=112 rotate=64 offset=param.d117x,param.d117y self=top-start bg=radial(#7A6A5566 0%, #7A6A5566 8%, #7A6A5500 70%)
+  rect w=154 h=55 rotate=29 offset=param.d118x,param.d118y self=top-start bg=radial(#6E5F4A70 0%, #6E5F4A70 15%, #6E5F4A00 70%)
+  rect w=96 h=110 rotate=-66 offset=param.d119x,param.d119y self=top-start bg=radial(#6E5F4A7A 0%, #6E5F4A7A 23%, #6E5F4A00 70%)
+  rect w=123 h=120 rotate=-60 offset=param.d120x,param.d120y self=top-start bg=radial(#846F5066 0%, #846F5066 12%, #846F5000 70%)
+  rect w=113 h=59 rotate=64 offset=param.d121x,param.d121y self=top-start bg=radial(#7A6A5566 0%, #7A6A5566 24%, #7A6A5500 70%)
+  rect w=143 h=141 rotate=69 offset=param.d122x,param.d122y self=top-start bg=radial(#6E5F4A70 0%, #6E5F4A70 17%, #6E5F4A00 70%)
+  rect w=122 h=78 rotate=-74 offset=param.d123x,param.d123y self=top-start bg=radial(#6E5F4A66 0%, #6E5F4A66 14%, #6E5F4A00 70%)
+  rect w=106 h=58 rotate=50 offset=param.d124x,param.d124y self=top-start bg=radial(#7A6A5566 0%, #7A6A5566 19%, #7A6A5500 70%)
+  rect w=89 h=145 rotate=10 offset=param.d125x,param.d125y self=top-start bg=radial(#7A6A5566 0%, #7A6A5566 9%, #7A6A5500 70%)
+  rect w=164 h=158 rotate=5 offset=param.d126x,param.d126y self=top-start bg=radial(#6E5F4A66 0%, #6E5F4A66 10%, #6E5F4A00 70%)
+  rect w=73 h=128 rotate=4 offset=param.d127x,param.d127y self=top-start bg=radial(#7A6A557A 0%, #7A6A557A 8%, #7A6A5500 70%)
+  rect w=315 h=271 rotate=26 offset=param.d128x,param.d128y self=top-start bg=radial(#CFB4787A 0%, #CFB4787A 12%, #CFB47800 70%)
+  rect w=412 h=213 rotate=25 offset=param.d129x,param.d129y self=top-start bg=radial(#D9BE8685 0%, #D9BE8685 30%, #D9BE8600 70%)
+  rect w=342 h=325 rotate=-24 offset=param.d130x,param.d130y self=top-start bg=radial(#E0C88E85 0%, #E0C88E85 20%, #E0C88E00 70%)
+  rect w=348 h=339 rotate=2 offset=param.d131x,param.d131y self=top-start bg=radial(#D9BE8685 0%, #D9BE8685 16%, #D9BE8600 70%)
+  rect w=313 h=332 rotate=4 offset=param.d132x,param.d132y self=top-start bg=radial(#D9BE8685 0%, #D9BE8685 26%, #D9BE8600 70%)
+  rect w=309 h=328 rotate=11 offset=param.d133x,param.d133y self=top-start bg=radial(#CFB47885 0%, #CFB47885 15%, #CFB47800 70%)
+  rect w=434 h=186 rotate=37 offset=param.d134x,param.d134y self=top-start bg=radial(#CFB47885 0%, #CFB47885 29%, #CFB47800 70%)
+  rect w=396 h=337 rotate=27 offset=param.d135x,param.d135y self=top-start bg=radial(#D9BE8694 0%, #D9BE8694 27%, #D9BE8600 70%)
+  rect w=267 h=330 rotate=-16 offset=param.d136x,param.d136y self=top-start bg=radial(#CFB47894 0%, #CFB47894 13%, #CFB47800 70%)
+  rect w=293 h=327 rotate=32 offset=param.d137x,param.d137y self=top-start bg=radial(#E0C88E94 0%, #E0C88E94 16%, #E0C88E00 70%)
+  rect w=230 h=173 rotate=-20 offset=param.d138x,param.d138y self=top-start bg=radial(#D9BE867A 0%, #D9BE867A 30%, #D9BE8600 70%)
+  rect w=283 h=265 rotate=20 offset=param.d139x,param.d139y self=top-start bg=radial(#E0C88E85 0%, #E0C88E85 29%, #E0C88E00 70%)
+  rect w=260 h=222 rotate=31 offset=param.d140x,param.d140y self=top-start bg=radial(#D9BE867A 0%, #D9BE867A 25%, #D9BE8600 70%)
+  rect w=215 h=307 rotate=-1 offset=param.d141x,param.d141y self=top-start bg=radial(#D9BE8685 0%, #D9BE8685 17%, #D9BE8600 70%)
+  rect w=170 h=3 rotate=-50 offset=param.d142x,param.d142y self=top-start opacity=0.47 bg=linear(90, #5E330B00 0%, #5E330B9E 45%, #5E330B00 100%)
+  rect w=124 h=3 rotate=6 offset=param.d143x,param.d143y self=top-start opacity=0.47 bg=linear(90, #5E330B00 0%, #5E330B9E 45%, #5E330B00 100%)
+  rect w=140 h=5 rotate=-64 offset=param.d144x,param.d144y self=top-start opacity=0.51 bg=linear(90, #5E330B00 0%, #5E330B9E 45%, #5E330B00 100%)
+  rect w=126 h=4 rotate=-21 offset=param.d145x,param.d145y self=top-start opacity=0.4 bg=linear(90, #7E501700 0%, #7E50179E 45%, #7E501700 100%)
+  rect w=109 h=4 rotate=-5 offset=param.d146x,param.d146y self=top-start opacity=0.49 bg=linear(90, #8F5F1E00 0%, #8F5F1E9E 45%, #8F5F1E00 100%)
+  rect w=103 h=5 rotate=11 offset=param.d147x,param.d147y self=top-start opacity=0.62 bg=linear(90, #8F5F1E00 0%, #8F5F1E9E 45%, #8F5F1E00 100%)
+  rect w=63 h=3 rotate=9 offset=param.d148x,param.d148y self=top-start opacity=0.53 bg=linear(90, #7E501700 0%, #7E50179E 45%, #7E501700 100%)
+  rect w=167 h=5 rotate=45 offset=param.d149x,param.d149y self=top-start opacity=0.58 bg=linear(90, #8F5F1E00 0%, #8F5F1E9E 45%, #8F5F1E00 100%)
+  rect w=138 h=5 rotate=-69 offset=param.d150x,param.d150y self=top-start opacity=0.55 bg=linear(90, #6D3E0E00 0%, #6D3E0E9E 45%, #6D3E0E00 100%)
+  rect w=129 h=5 rotate=17 offset=param.d151x,param.d151y self=top-start opacity=0.61 bg=linear(90, #5E330B00 0%, #5E330B9E 45%, #5E330B00 100%)
+  rect w=104 h=5 rotate=37 offset=param.d152x,param.d152y self=top-start opacity=0.66 bg=linear(90, #7E501700 0%, #7E50179E 45%, #7E501700 100%)
+  rect w=70 h=5 rotate=-34 offset=param.d153x,param.d153y self=top-start opacity=0.5 bg=linear(90, #7E501700 0%, #7E50179E 45%, #7E501700 100%)
+  rect w=78 h=3 rotate=-29 offset=param.d154x,param.d154y self=top-start opacity=0.61 bg=linear(90, #6D3E0E00 0%, #6D3E0E9E 45%, #6D3E0E00 100%)
+  rect w=108 h=4 rotate=-67 offset=param.d155x,param.d155y self=top-start opacity=0.42 bg=linear(90, #7E501700 0%, #7E50179E 45%, #7E501700 100%)
+  rect w=105 h=4 rotate=8 offset=param.d156x,param.d156y self=top-start opacity=0.63 bg=linear(90, #8F5F1E00 0%, #8F5F1E9E 45%, #8F5F1E00 100%)
+  rect w=63 h=5 rotate=-55 offset=param.d157x,param.d157y self=top-start opacity=0.54 bg=linear(90, #8F5F1E00 0%, #8F5F1E9E 45%, #8F5F1E00 100%)
+  rect w=102 h=4 rotate=61 offset=param.d158x,param.d158y self=top-start opacity=0.59 bg=linear(90, #7E501700 0%, #7E50179E 45%, #7E501700 100%)
+  rect w=134 h=3 rotate=-64 offset=param.d159x,param.d159y self=top-start opacity=0.58 bg=linear(90, #6D3E0E00 0%, #6D3E0E9E 45%, #6D3E0E00 100%)
+  rect w=59 h=3 rotate=35 offset=param.d160x,param.d160y self=top-start opacity=0.62 bg=linear(90, #5E330B00 0%, #5E330B9E 45%, #5E330B00 100%)
+  rect w=89 h=3 rotate=-8 offset=param.d161x,param.d161y self=top-start opacity=0.58 bg=linear(90, #7E501700 0%, #7E50179E 45%, #7E501700 100%)
+  rect w=3 h=2 rotate=40 offset=param.d162x,param.d162y self=top-start opacity=0.58 bg=radial(#4A2C0BD6 0%, #4A2C0B00 74%)
+  rect w=9 h=7 rotate=-18 offset=param.d163x,param.d163y self=top-start opacity=0.61 bg=radial(#5A3710D6 0%, #5A371000 74%)
+  rect w=9 h=7 rotate=60 offset=param.d164x,param.d164y self=top-start opacity=0.67 bg=radial(#5A3710D6 0%, #5A371000 74%)
+  rect w=4 h=3 rotate=-58 offset=param.d165x,param.d165y self=top-start opacity=0.58 bg=radial(#5A3710D6 0%, #5A371000 74%)
+  rect w=3 h=2 rotate=26 offset=param.d166x,param.d166y self=top-start opacity=0.65 bg=radial(#4A2C0BD6 0%, #4A2C0B00 74%)
+  rect w=7 h=5 rotate=60 offset=param.d167x,param.d167y self=top-start opacity=0.75 bg=radial(#3E2408D6 0%, #3E240800 74%)
+  rect w=4 h=3 rotate=28 offset=param.d168x,param.d168y self=top-start opacity=0.51 bg=radial(#4A2C0BD6 0%, #4A2C0B00 74%)
+  rect w=6 h=4 rotate=-5 offset=param.d169x,param.d169y self=top-start opacity=0.57 bg=radial(#4A2C0BD6 0%, #4A2C0B00 74%)
+  rect w=6 h=4 rotate=21 offset=param.d170x,param.d170y self=top-start opacity=0.62 bg=radial(#3E2408D6 0%, #3E240800 74%)
+  rect w=6 h=4 rotate=19 offset=param.d171x,param.d171y self=top-start opacity=0.75 bg=radial(#4A2C0BD6 0%, #4A2C0B00 74%)
+  rect w=3 h=2 rotate=46 offset=param.d172x,param.d172y self=top-start opacity=0.54 bg=radial(#3E2408D6 0%, #3E240800 74%)
+  rect w=4 h=3 rotate=-11 offset=param.d173x,param.d173y self=top-start opacity=0.65 bg=radial(#4A2C0BD6 0%, #4A2C0B00 74%)
+  rect w=5 h=4 rotate=1 offset=param.d174x,param.d174y self=top-start opacity=0.73 bg=radial(#5A3710D6 0%, #5A371000 74%)
+  rect w=4 h=3 rotate=-29 offset=param.d175x,param.d175y self=top-start opacity=0.51 bg=radial(#5A3710D6 0%, #5A371000 74%)
+  rect w=8 h=6 rotate=-38 offset=param.d176x,param.d176y self=top-start opacity=0.66 bg=radial(#5A3710D6 0%, #5A371000 74%)
+  rect w=8 h=6 rotate=-54 offset=param.d177x,param.d177y self=top-start opacity=0.6 bg=radial(#5A3710D6 0%, #5A371000 74%)
+  rect w=4 h=3 rotate=-45 offset=param.d178x,param.d178y self=top-start opacity=0.75 bg=radial(#3E2408D6 0%, #3E240800 74%)
+  rect w=9 h=7 rotate=33 offset=param.d179x,param.d179y self=top-start opacity=0.76 bg=radial(#3E2408D6 0%, #3E240800 74%)
+  rect w=3 h=2 rotate=-3 offset=param.d180x,param.d180y self=top-start opacity=0.54 bg=radial(#3E2408D6 0%, #3E240800 74%)
+  rect w=7 h=5 rotate=-5 offset=param.d181x,param.d181y self=top-start opacity=0.66 bg=radial(#3E2408D6 0%, #3E240800 74%)
+  rect w=9 h=7 rotate=-32 offset=param.d182x,param.d182y self=top-start opacity=0.72 bg=radial(#4A2C0BD6 0%, #4A2C0B00 74%)
+  rect w=6 h=4 rotate=14 offset=param.d183x,param.d183y self=top-start opacity=0.53 bg=radial(#5A3710D6 0%, #5A371000 74%)
+  rect w=3 h=2 rotate=27 offset=param.d184x,param.d184y self=top-start opacity=0.73 bg=radial(#5A3710D6 0%, #5A371000 74%)
+  rect w=8 h=6 rotate=9 offset=param.d185x,param.d185y self=top-start opacity=0.51 bg=radial(#3E2408D6 0%, #3E240800 74%)
+  rect w=3 h=3 offset=param.d186x,param.d186y self=top-start opacity=0.59 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=3 h=3 offset=param.d187x,param.d187y self=top-start opacity=0.57 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=2 h=2 offset=param.d188x,param.d188y self=top-start opacity=0.58 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=3 h=3 offset=param.d189x,param.d189y self=top-start opacity=0.39 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=4 h=4 offset=param.d190x,param.d190y self=top-start opacity=0.55 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=3 h=3 offset=param.d191x,param.d191y self=top-start opacity=0.65 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=3 h=3 offset=param.d192x,param.d192y self=top-start opacity=0.68 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=3 h=3 offset=param.d193x,param.d193y self=top-start opacity=0.48 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=3 h=3 offset=param.d194x,param.d194y self=top-start opacity=0.52 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=3 h=3 offset=param.d195x,param.d195y self=top-start opacity=0.42 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=3 h=3 offset=param.d196x,param.d196y self=top-start opacity=0.54 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=3 h=3 offset=param.d197x,param.d197y self=top-start opacity=0.39 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=4 h=4 offset=param.d198x,param.d198y self=top-start opacity=0.63 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=3 h=3 offset=param.d199x,param.d199y self=top-start opacity=0.58 bg=radial(#5A3710E0 0%, #5A371000 76%)
+  rect w=3 h=3 offset=param.d200x,param.d200y self=top-start opacity=0.35 bg=radial(#5A3710E0 0%, #5A371000 76%)
+  rect w=3 h=3 offset=param.d201x,param.d201y self=top-start opacity=0.41 bg=radial(#5A3710E0 0%, #5A371000 76%)
+  rect w=4 h=4 offset=param.d202x,param.d202y self=top-start opacity=0.64 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=2 h=2 offset=param.d203x,param.d203y self=top-start opacity=0.52 bg=radial(#5A3710E0 0%, #5A371000 76%)
+  rect w=2 h=2 offset=param.d204x,param.d204y self=top-start opacity=0.64 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=2 h=2 offset=param.d205x,param.d205y self=top-start opacity=0.59 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=3 h=3 offset=param.d206x,param.d206y self=top-start opacity=0.51 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=2 h=2 offset=param.d207x,param.d207y self=top-start opacity=0.61 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=4 h=4 offset=param.d208x,param.d208y self=top-start opacity=0.36 bg=radial(#5A3710E0 0%, #5A371000 76%)
+  rect w=2 h=2 offset=param.d209x,param.d209y self=top-start opacity=0.41 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=2 h=2 offset=param.d210x,param.d210y self=top-start opacity=0.4 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=2 h=2 offset=param.d211x,param.d211y self=top-start opacity=0.41 bg=radial(#5A3710E0 0%, #5A371000 76%)
+  rect w=4 h=4 offset=param.d212x,param.d212y self=top-start opacity=0.55 bg=radial(#5A3710E0 0%, #5A371000 76%)
+  rect w=3 h=3 offset=param.d213x,param.d213y self=top-start opacity=0.57 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=2 h=2 offset=param.d214x,param.d214y self=top-start opacity=0.7 bg=radial(#5A3710E0 0%, #5A371000 76%)
+  rect w=2 h=2 offset=param.d215x,param.d215y self=top-start opacity=0.44 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=3 h=3 offset=param.d216x,param.d216y self=top-start opacity=0.6 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=2 h=2 offset=param.d217x,param.d217y self=top-start opacity=0.42 bg=radial(#5A3710E0 0%, #5A371000 76%)
+  rect w=3 h=3 offset=param.d218x,param.d218y self=top-start opacity=0.57 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=3 h=3 offset=param.d219x,param.d219y self=top-start opacity=0.4 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=2 h=2 offset=param.d220x,param.d220y self=top-start opacity=0.5 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=2 h=2 offset=param.d221x,param.d221y self=top-start opacity=0.4 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=2 h=2 offset=param.d222x,param.d222y self=top-start opacity=0.58 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=2 h=2 offset=param.d223x,param.d223y self=top-start opacity=0.55 bg=radial(#5A3710E0 0%, #5A371000 76%)
+  rect w=3 h=3 offset=param.d224x,param.d224y self=top-start opacity=0.47 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=2 h=2 offset=param.d225x,param.d225y self=top-start opacity=0.35 bg=radial(#5A3710E0 0%, #5A371000 76%)
+  rect w=2 h=2 offset=param.d226x,param.d226y self=top-start opacity=0.51 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=4 h=4 offset=param.d227x,param.d227y self=top-start opacity=0.66 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=4 h=4 offset=param.d228x,param.d228y self=top-start opacity=0.5 bg=radial(#3E2408E0 0%, #3E240800 76%)
+  rect w=3 h=3 offset=param.d229x,param.d229y self=top-start opacity=0.64 bg=radial(#4A2C0BE0 0%, #4A2C0B00 76%)
+  rect w=7 h=7 rotate=-28 offset=param.d230x,param.d230y self=top-start style=fx.foxingL
+  rect w=16 h=16 rotate=23 offset=param.d231x,param.d231y self=top-start style=fx.foxing
+  rect w=11 h=11 rotate=20 offset=param.d232x,param.d232y self=top-start style=fx.foxingL
+  rect w=9 h=9 rotate=-27 offset=param.d233x,param.d233y self=top-start style=fx.foxing
+  rect w=9 h=9 rotate=-25 offset=param.d234x,param.d234y self=top-start style=fx.foxingL
+  rect w=15 h=15 rotate=-3 offset=param.d235x,param.d235y self=top-start style=fx.foxing
+  rect w=14 h=14 rotate=-22 offset=param.d236x,param.d236y self=top-start style=fx.foxingL
+  rect w=11 h=11 rotate=-36 offset=param.d237x,param.d237y self=top-start style=fx.foxing
+  rect w=7 h=7 rotate=0 offset=param.d238x,param.d238y self=top-start style=fx.foxingL
+  rect w=9 h=9 rotate=34 offset=param.d239x,param.d239y self=top-start style=fx.foxing
+  rect w=8 h=8 rotate=26 offset=param.d240x,param.d240y self=top-start style=fx.foxingL
+  rect w=13 h=13 rotate=-33 offset=param.d241x,param.d241y self=top-start style=fx.foxing
+  rect w=13 h=13 rotate=-16 offset=param.d242x,param.d242y self=top-start style=fx.foxingL
+  rect w=14 h=14 rotate=-9 offset=param.d243x,param.d243y self=top-start style=fx.foxing
+
+  // soft diagonal sheen, then the warm pool
+  rect w=fill h=fill style=fx.sheen
+  rect w=fill h=fill style=fx.pool
+
+  // fine grit veil
+  rect w=fill h=fill style=fx.velo
+
+  // ---- the dark frame: four edges sinking into umber (reference)
+  rect w=fill h=fill style=fx.vig
+  rect w=fill h=fill bg=linear(180, #5E330BC7 0%, #5E330B00 13%)
+  rect w=fill h=fill bg=linear(0,   #5E330BD1 0%, #5E330B00 13%)
+  rect w=fill h=fill bg=linear(90,  #5E330BC0 0%, #5E330B00 11%)
+  rect w=fill h=fill bg=linear(-90, #5E330BC0 0%, #5E330B00 11%)
+}
