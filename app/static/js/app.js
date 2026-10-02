@@ -18,7 +18,7 @@
 (() => {
     'use strict';
 
-    const SLAB_VERSION = '15';
+    const SLAB_VERSION = '16';
     const FONTS = [
         ['Cinzel', '/static/fonts/slab-cinzel-700.ttf'],
         ['Eagle Lake', '/static/fonts/slab-eagle-lake-400.ttf'],

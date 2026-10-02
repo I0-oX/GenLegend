@@ -66,7 +66,9 @@ col w=fill animate=unfurl,600,once,ease-out,350 {
       }
     }
   }
-  rect w=fill h=1 bg=color.goldDeep
+  // soft shadow into the papyrus instead of a gilt hairline
+  // (user: a crisp line here reads as two images glued together)
+  rect w=fill h=26 bg=linear(180, #1A0F0663 0%, #1A0F0600 100%)
 }
 
 params {
