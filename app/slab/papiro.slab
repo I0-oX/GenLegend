@@ -12,6 +12,9 @@
 //   * Age reads as TONE: deeper and paler patches over the sheet, edge
 //     darkening and a vignette on top — no scorch marks (user: "forget
 //     the burns, just darker and lighter parts like a real old sheet").
+//   * Grimoire mood (user: "no se ha llegado al grimoire feeling"): deep
+//     amber base falling to shadow at the edges, ink-dark stain islands,
+//     heavier vignette — a spellbook page, not a fresh sheet.
 //
 // Placement note: slab tuples (offset=) accept doc `param.` refs but not
 // def-local props, so each scatterable mark is a literal child with its
@@ -19,33 +22,33 @@
 
 tokens {
   fx {
-    papiro  { bg radial(#E8D4A4 0%, #CFB183 50%, #B6976A 100%); grain 0.05 }
+    papiro  { bg radial(#DCC49A 0%, #BFA075 52%, #7E613C 100%); grain 0.05 }
     // Strip tone: wide soft bands, irregular stop spacing, faint tilt,
     // grain so the transitions dither instead of reading as clean lines.
     tiras1  {
       bg linear(179.15,
-        #FFF7E000 0%, #FFF7E01E 3.5%, #7A5A2A00 8%, #7A5A2A14 10.5%,
-        #FFF7E000 15%, #FFF7E01B 19.5%, #7A5A2A00 24.5%, #7A5A2A12 27%,
-        #FFF7E000 33%, #FFF7E01C 37.5%, #7A5A2A00 43%, #7A5A2A14 46.5%,
-        #FFF7E000 52%, #FFF7E01A 57%, #7A5A2A00 63%, #7A5A2A12 66%,
-        #FFF7E000 72%, #FFF7E01B 77.5%, #7A5A2A00 83%, #7A5A2A13 86.5%,
+        #FFF7E000 0%, #FFF7E01E 3.5%, #5E431D00 8%, #5E431D1C 10.5%,
+        #FFF7E000 15%, #FFF7E01B 19.5%, #5E431D00 24.5%, #5E431D1A 27%,
+        #FFF7E000 33%, #FFF7E01C 37.5%, #5E431D00 43%, #5E431D1C 46.5%,
+        #FFF7E000 52%, #FFF7E01A 57%, #5E431D00 63%, #5E431D1A 66%,
+        #FFF7E000 72%, #FFF7E01B 77.5%, #5E431D00 83%, #5E431D1B 86.5%,
         #FFF7E000 92%, #FFF7E010 96.5%, #FFF7E000 100%);
       grain 0.035
     }
     tiras2  {
       bg linear(-178.85,
-        #7A5A2A00 0%, #7A5A2A10 6.5%, #7A5A2A00 13.5%,
+        #5E431D00 0%, #5E431D17 6.5%, #5E431D00 13.5%,
         #FFF7E000 21%, #FFF7E012 26%, #FFF7E000 32%,
-        #7A5A2A00 41%, #7A5A2A10 47%, #7A5A2A00 54%,
+        #5E431D00 41%, #5E431D17 47%, #5E431D00 54%,
         #FFF7E000 63%, #FFF7E011 69%, #FFF7E000 76%,
-        #7A5A2A00 85%, #7A5A2A0F 91%, #7A5A2A00 100%);
+        #5E431D00 85%, #5E431D16 91%, #5E431D00 100%);
       grain 0.03
     }
     sheen   { bg linear(112, #FFF7E000 22%, #FFF7E01A 46%, #FFF7E000 64%) }
     velo    { bg #FFF7E00D; grain 0.045,2 }
-    anillo  { bg radial(#00000000 44%, rgba(96, 64, 26, 0.24) 60%, #00000000 77%) }
-    foxing  { bg radial(rgba(74, 48, 18, 0.60) 0%, rgba(74, 48, 18, 0) 70%) }
-    vig     { bg radial(#321A0A00 40%, #321A0A85 100%) }
+    anillo  { bg radial(#00000000 44%, rgba(88, 58, 22, 0.30) 60%, #00000000 77%) }
+    foxing  { bg radial(rgba(52, 32, 10, 0.72) 0%, rgba(74, 48, 18, 0) 70%) }
+    vig     { bg radial(#24120600 34%, #241206B8 100%) }
   }
 }
 
@@ -68,19 +71,19 @@ stack w=fill h=fill style=fx.papiro {
   // age scatter: oversized elliptical washes, rotated off-axis,
   // repositioned per load via param anchors
   rect w=940 h=660 rotate=-6 offset=param.m1x,param.m1y self=top-start \
-       bg=radial(#76521F66 0%, #76521F00 74%) grain=0.025
+       bg=radial(#63431A80 0%, #63431A00 74%) grain=0.025
   rect w=1080 h=740 rotate=8 offset=param.m2x,param.m2y self=top-start opacity=0.8 \
-       bg=radial(#68461973 0%, #68461900 76%) grain=0.025
+       bg=radial(#5A3C1587 0%, #5A3C1500 76%) grain=0.025
   rect w=880 h=680 rotate=-11 offset=param.m3x,param.m3y self=top-start opacity=0.7 \
-       bg=radial(#FFF7D842 0%, #FFF7D800 74%) grain=0.02
+       bg=radial(#FFF7D84E 0%, #FFF7D800 74%) grain=0.02
   rect w=760 h=560 rotate=14 offset=param.m4x,param.m4y self=top-start opacity=0.75 \
-       bg=radial(#5E401870 0%, #5E401800 72%) grain=0.025
+       bg=radial(#4E321485 0%, #4E321400 72%) grain=0.025
 
   // deeper tone patches: the dark islands of an aged sheet
   rect w=820 h=600 rotate=-9 offset=param.m5x,param.m5y self=top-start opacity=0.85 \
-       bg=radial(#4E361475 0%, #4E361400 74%) grain=0.025
+       bg=radial(#3A261094 0%, #3A261000 74%) grain=0.025
   rect w=700 h=520 rotate=19 offset=param.m6x,param.m6y self=top-start opacity=0.8 \
-       bg=radial(#573C1770 0%, #573C1700 72%) grain=0.025
+       bg=radial(#432C1199 0%, #432C1100 72%) grain=0.025
 
   // water ring + soft diagonal sheen
   rect w=560 h=430 offset=600,240 self=top-start style=fx.anillo
@@ -102,6 +105,6 @@ stack w=fill h=fill style=fx.papiro {
 
   // edge aging on top: vignette + top/bottom scorch fade
   rect w=fill h=fill style=fx.vig
-  rect w=fill h=fill bg=linear(180, #321A0A55 0%, #321A0A00 13%)
-  rect w=fill h=fill bg=linear(0, #321A0A4E 0%, #321A0A00 11%)
+  rect w=fill h=fill bg=linear(180, #2C16086E 0%, #2C160800 15%)
+  rect w=fill h=fill bg=linear(0, #2C160866 0%, #2C160800 13%)
 }
