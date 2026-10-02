@@ -8,46 +8,51 @@
 // nav_dm are the parked first-publish chrome, hidden while param.parked —
 // set data-player-only="false" on <gl-shell> to restore them.
 //
-// House palette (shared by shell / footer / forge / sheet): night is the
-// page ground, cave the panel surface, hairline lines instead of heavy
-// borders, gold for accent, ember for the one loud action, bone/ash text.
+// House palette (shared by shell / footer / forge / sheet): the chrome is
+// bound leather with gilt tooling, the pages are parchment — a grimoire open
+// on the table. Cream/parch text on leather, gold for the tooling.
 
 tokens {
   color {
-    night     #0C0A11   // page ground
-    cave      #171320   // panel surface
-    caveHover #241E31   // raised surface
-    line      #342C47   // hairline borders
-    gold      #E9C46A   // accent
-    goldDeep  #B8933D   // resting accent stroke
-    bone      #F4ECD8   // primary text
-    ash       #A79DBB   // secondary text
-    ember     #D7263D   // the loud one
+    leather      #2E1E10   // bound-leather chrome ground
+    leatherHover #43301B   // raised leather, pill hover
+    tooling      #A97B1D   // hairline borders (gilt tooling)
+    gold         #D9A441   // brand, gilt accents
+    goldDeep     #A97B1D   // resting accent stroke
+    cream        #EDE0BE   // primary text on leather
+    parch        #B9A67C   // secondary text on leather
+    wax          #9E2B25   // the loud one (sealing wax)
   }
   text {
     brand { family "Cinzel"; size 24; weight 700 }
     nav   { family "Cinzel"; size 13; weight 700; tracking 1.6 }
   }
   fx {
-    pill { stroke #342C47; stroke-w 1; radius 8 }
+    pill { stroke #A97B1D; stroke-w 1; radius 8 }
   }
+}
+
+// A page settling onto the table: ink fades in as the sheet lays down.
+anim unfurl {
+  0% { opacity=0; scale=0.98 }
+  100% { opacity=1; scale=1 }
 }
 
 // One header button. `action` is the signal name the bridge answers.
 def NavLink(caption, action) {
-  row w=hug h=38 pad=0,16 style=fx.pill align=center act=action {
-    when hover { bg=color.caveHover stroke=color.goldDeep stroke-w=1 }
+  row w=hug h=38 pad=0,16 style=fx.pill align=center act=action transition=160,ease-out {
+    when hover { bg=color.leatherHover stroke=color.gold stroke-w=1 scale=1.04 }
     when pressed { opacity=0.75 }
     when focus-visible { stroke=color.gold stroke-w=2 stroke-align=inside }
-    text caption style=text.nav color=color.bone nowrap
+    text caption style=text.nav color=color.cream nowrap
   }
 }
 
-col w=fill {
-  row w=fill pad=13,28 bg=color.night align=center gap=16 {
-    row#brand w=hug act=nav_home {
-      when hover { opacity=0.8 }
-      when pressed { opacity=0.65 }
+col w=fill animate=unfurl,600,once,ease-out,350 {
+  row w=fill pad=13,28 bg=color.leather align=center gap=16 {
+    row#brand w=hug act=nav_home transition=160,ease-out {
+      when hover { scale=1.05 }
+      when pressed { opacity=0.75 }
       text param.brand style=text.brand color=color.gold
     }
     spacer

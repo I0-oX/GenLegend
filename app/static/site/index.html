@@ -40,18 +40,26 @@
   }
 
   html {
-   background-color: #0c0a11;
-   color: #f4ecd8;
+   background-color: #e9d8b0;
+   color: #2b1e12;
   }
   body {
    height: auto; /* style.css pins height:100% — that truncates the column
                     flex at the viewport and lets children overflow it */
    min-height: 100vh;
-   background-color: #0c0a11;
-   background-image: radial-gradient(1100px 560px at 50% -8%, #1b1528 0%, #0c0a11 62%);
+   /* Procedural papyrus: fiber weave + age blotches + a lit belly and
+      darkened rim, all fixed to the viewport like a sheet on the table. */
+   background-color: #e9d8b0;
+   background-image:
+    repeating-linear-gradient(92deg, rgba(139, 107, 54, 0.05) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(2deg, rgba(139, 107, 54, 0.04) 0 1px, transparent 1px 4px),
+    radial-gradient(520px 260px at 14% 10%, rgba(184, 150, 90, 0.30), transparent 72%),
+    radial-gradient(640px 380px at 86% 34%, rgba(160, 124, 64, 0.22), transparent 72%),
+    radial-gradient(460px 460px at 46% 104%, rgba(146, 110, 52, 0.26), transparent 70%),
+    radial-gradient(1100px 620px at 50% 26%, #f2e4c0 0%, #e9d8b0 56%, #ddc69c 100%),
+    radial-gradient(closest-side at 50% 50%, transparent 62%, rgba(90, 64, 30, 0.34) 100%);
    background-attachment: fixed;
-   background-repeat: no-repeat;
-   color: #f4ecd8;
+   color: #2b1e12;
   }
 
   /* Welcome / tablet chrome is gone: <gl-forge> owns the whole home, and
@@ -61,15 +69,15 @@
    margin-top: 1rem;
   }
 
-  /* The generated sheet is content: a light framed card on the dark page.
-     The legacy result inherits colors — restore its own text color so the
-     white cards don't pick up the page's bone text. */
+  /* The generated sheet is content: a vellum card laid on the papyrus.
+     The legacy result inherits colors — keep its own ink text so the light
+     card doesn't pick up any stray color. */
   #character_result {
-   background: #fff9f0;
+   background: #f5eed8;
    color: var(--text-color);
-   border: 1px solid #342c47;
+   border: 1px solid #a88f63;
    border-radius: 16px;
-   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+   box-shadow: 0 16px 40px rgba(74, 58, 31, 0.28);
    margin-top: 1.25rem;
    overflow: hidden;
    text-align: left;
@@ -122,6 +130,6 @@
 
   <script src="/static/js/summon-loader.js"></script>
   <script src="/static/js/eldritch.js"></script>
-  <script type="module" src="/static/js/app.js?v=4"></script>
+  <script type="module" src="/static/js/app.js?v=5"></script>
 </body>
 </html>

@@ -7,13 +7,12 @@
 
 tokens {
   color {
-    night     #0C0A11   // page ground
-    cave      #171320   // panel surface
-    line      #342C47   // hairline borders
-    gold      #E9C46A   // accent
-    goldDeep  #B8933D   // resting accent
-    bone      #F4ECD8   // primary text
-    ash       #A79DBB   // secondary text
+    leather   #2E1E10   // bound-leather chrome ground
+    tooling   #A97B1D   // hairline borders (gilt tooling)
+    gold      #D9A441   // accent
+    goldDeep  #A97B1D   // resting accent
+    cream     #EDE0BE   // primary text on leather
+    parch     #B9A67C   // secondary text on leather
   }
   text {
     link { family "Cinzel"; size 12; weight 700; tracking 1.4 }
@@ -24,30 +23,30 @@ tokens {
 // One footer separator, so the "|" inherits its padding from a row.
 def Sep() {
   row w=hug pad=0,14 {
-    text "|" style=text.link color=color.ash
+    text "|" style=text.link color=color.parch
   }
 }
 
 col w=fill {
-  rect w=fill h=1 bg=color.line
-  col w=fill pad=20 bg=color.night align=center gap=8 {
+  rect w=fill h=1 bg=color.tooling
+  col w=fill pad=20 bg=color.leather align=center gap=8 {
     row w=hug align=center {
-      row w=hug act=open_about {
-        when hover { opacity=0.75 }
+      row w=hug act=open_about transition=140,ease-out {
+        when hover { scale=1.06 color=color.gold }
         when pressed { opacity=0.6 }
-        text "About Us" style=text.link color=color.bone nowrap
+        text "About Us" style=text.link color=color.cream nowrap
       }
       Sep
-      row w=hug act=open_wiki {
-        when hover { opacity=0.75 }
+      row w=hug act=open_wiki transition=140,ease-out {
+        when hover { scale=1.06 color=color.gold }
         when pressed { opacity=0.6 }
-        text "Lore Wiki" style=text.link color=color.bone nowrap
+        text "Lore Wiki" style=text.link color=color.cream nowrap
       }
       Sep
       row w=hug align=center gap=6 {
-        text "By" style=text.by color=color.ash
-        row w=hug act=open_julio {
-          when hover { opacity=0.75 }
+        text "By" style=text.by color=color.parch
+        row w=hug act=open_julio transition=140,ease-out {
+          when hover { scale=1.06 }
           when pressed { opacity=0.6 }
           text "Julio Toboso" style=text.by color=color.gold nowrap
         }

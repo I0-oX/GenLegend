@@ -10,22 +10,26 @@
 // generate forges the character. The legacy h2/p/tablet chrome is gone —
 // this component IS the home page.
 //
-// House palette (shared by shell / footer / forge / sheet): night is the
-// page ground, cave the panel surface, hairline lines instead of heavy
-// borders, gold for accent, ember for the one loud action, bone/ash text.
+// House palette (shared by shell / footer / forge / sheet): a papyrus page
+// inside a bound-leather grimoire — vellum panels with procedural grain,
+// ink-brown text, dark-gilt labels, sealing-wax red for the one loud action.
+// Motion: entrances unfurl once (the sheet lays down), hovers pop via
+// transitions, loops only while a condition holds (hero rune, FORGING…).
 
 tokens {
   color {
-    night     #0C0A11   // page ground, wells
-    cave      #171320   // card surface
-    caveHover #241E31   // raised surface, option hover
-    line      #342C47   // hairline borders
-    gold      #E9C46A   // accent, labels, carets
-    goldDeep  #B8933D   // resting accent stroke
-    ember     #D7263D   // the loud one
-    emberDeep #A31B2F   // pressed
-    bone      #F4ECD8   // primary text
-    ash       #A79DBB   // secondary text
+    parch      #E9D8B0   // the page ground (index.html matches)
+    vellum     #F5EED8   // card surface
+    raised     #EFE2C0   // hover / chips / picked rows
+    well       #E5D3A6   // inset wells (option lists)
+    field      #F0E6C8   // input strips sit between card and well
+    line       #A88F63   // hairline borders
+    ochre      #8A5A12   // labels, carets, gilt accents (dark gold)
+    ochreDeep  #6E4710   // resting accent stroke
+    wax        #9E2B25   // the loud one (sealing wax)
+    waxDeep    #7E1F1C   // pressed
+    ink        #2B1E12   // primary text
+    inkSoft    #5F4A2D   // secondary text
   }
   text {
     hero    { family "Cinzel"; size 46; weight 700; tracking 4 }
@@ -39,41 +43,63 @@ tokens {
     hint    { family "Cinzel"; size 11; weight 700; tracking 1.2 }
   }
   fx {
-    card  { bg #171320; stroke #342C47; stroke-w 1; radius 16 }
-    well  { bg #0C0A11; stroke #342C47; stroke-w 1; radius 10 }
-    field { bg #0C0A11; stroke #342C47; stroke-w 1; radius 10 }
-    pill  { bg #171320; stroke #342C47; stroke-w 1; radius 999 }
-    button { bg linear(180, #E11F35 0%, #A31B2F 100%); radius 12 }
+    card  { bg #F5EED8; stroke #A88F63; stroke-w 1; radius 16; grain 0.06 }
+    well  { bg #E5D3A6; stroke #A88F63; stroke-w 1; radius 10; grain 0.05 }
+    field { bg #F0E6C8; stroke #A88F63; stroke-w 1; radius 10 }
+    pill  { bg #EFE2C0; stroke #A88F63; stroke-w 1; radius 999 }
+    button { bg linear(180, #B5352F 0%, #7E1F1C 100%); radius 12 }
   }
   shadow {
-    card 0,16,40,#00000080
-    well inset,0,2,8,#00000059
-    lift 0,12,30,#D7263D59
+    card 0,16,40,#4A3A1F47
+    well inset,0,2,8,#8A6F4733
+    lift 0,12,30,#9E2B253D
   }
 }
 
-// One hero fact: a small pill under the headline.
-def FlavourChip(caption) {
-  row w=hug h=28 pad=0,14 style=fx.pill align=center {
-    text caption style=text.chip color=color.ash nowrap
+// The sheet lays down onto the table: ink fades in as it settles.
+anim unfurl {
+  0% { opacity=0; scale=0.97 }
+  100% { opacity=1; scale=1 }
+}
+
+// The hero seal: a gilt arc sweeps around while the pointer is on it.
+anim spin {
+  0% { rotate=0 }
+  100% { rotate=360 }
+}
+
+// The wax seal stamps down when a row becomes picked.
+anim pop {
+  0% { scale=0.2 }
+  70% { scale=1.3 }
+  100% { scale=1 }
+}
+
+// One hero fact: a small pill under the headline. `delay` staggers the
+// entrance so the chips land one after another.
+def FlavourChip(caption, delay=0) {
+  row w=hug h=28 pad=0,14 style=fx.pill align=center \
+      animate=unfurl,600,once,ease-out,delay {
+    text caption style=text.chip color=color.inkSoft nowrap
   }
 }
 
 // One option row. The host assigns each item key "category|Name", so a single
 // `pick` signal carries both the category and the choice.
 def Pick(name="", picked=false) export {
-  row w=fill pad=8,12 radius=8 align=center act=pick {
-    when hover { bg=color.caveHover }
+  row w=fill pad=8,12 radius=8 align=center act=pick transition=160,ease-out {
+    when hover { bg=color.raised scale=1.02 }
     when pressed { opacity=0.8 }
-    when focus-visible { stroke=color.gold stroke-w=2 stroke-align=inside }
+    when focus-visible { stroke=color.ochre stroke-w=2 stroke-align=inside }
     when picked {
-      bg=color.caveHover
-      stroke=color.goldDeep
+      bg=color.vellum
+      stroke=color.ochre
       stroke-w=1
       stroke-align=inside
-      rect w=6 h=6 radius=999 bg=color.gold
+      // The wax seal stamps down the moment the row becomes picked.
+      rect w=6 h=6 radius=999 bg=color.wax animate=pop,300,once,ease-out
     }
-    text name style=text.opt color=color.bone w=fill ellipsis nowrap
+    text name style=text.opt color=color.ink w=fill ellipsis nowrap
   }
 }
 
@@ -81,13 +107,13 @@ def Pick(name="", picked=false) export {
 def Picker(title, count) {
   col w=fill pad=16 style=fx.card {
     row align=center gap=8 pad=0,1,12,1 {
-      text title style=text.label color=color.gold
+      text title style=text.label color=color.ochre
       spacer
-      text count style=text.meta color=color.ash nowrap
+      text count style=text.meta color=color.inkSoft nowrap
     }
     col w=fill h=180 gap=2 style=fx.well shadow=shadow.well pad=6 scroll \
-        scrollbar=auto scrollbar-w=4 scrollbar-fg=color.gold \
-        scrollbar-bg=#E9C46A33 {
+        scrollbar=auto scrollbar-w=4 scrollbar-fg=color.ochre \
+        scrollbar-bg=#8A5A1233 {
       slot
     }
   }
@@ -104,24 +130,41 @@ params {
 }
 
 col w=fill gap=30 {
-  // Hero — this component replaces the page heading.
-  col w=fill align=center gap=14 pad=40,0,6,0 {
-    text "GEN LEGEND" style=text.hero color=color.gold align-text=center
+  // Hero — this component replaces the page heading. The seal is a fixed
+  // stack so the hover-gated spinning arc never reflows the layout.
+  col w=fill align=center gap=14 pad=44,0,6,0 {
+    stack w=76 h=76 animate=unfurl,600,once,ease-out {
+      rect w=76 h=76 radius=999 bg=radial(#C89A3E33 0%, #C89A3E00 72%)
+      rect w=76 h=76 radius=999 bg=none stroke=color.line stroke-w=1
+      rect self=center w=50 h=50 radius=999 bg=none stroke=color.ochre stroke-w=1.5
+      when hover {
+        rect w=76 h=76 radius=999 bg=none stroke-w=2 \
+            stroke=conic(0, #C89A3E00 0%, #C89A3E 45%, #C89A3E00 100%) \
+            animate=spin,2400,loop,linear
+      }
+    }
+    text "GEN LEGEND" style=text.hero align-text=center \
+        color=linear(180, #6E4710 0%, #9A6A18 55%, #6E4710 100%) \
+        animate=unfurl,700,once,ease-out,150
     text "Forge a legendary character for your next adventure." \
-        style=text.tagline color=color.ash align-text=center
+        style=text.tagline color=color.inkSoft align-text=center \
+        animate=unfurl,700,once,ease-out,280
     row w=hug gap=8 {
-      FlavourChip caption="SEEDED ROLLS"
-      FlavourChip caption="SHAREABLE LINKS"
-      FlavourChip caption="CHARACTER SHEETS"
+      FlavourChip caption="SEEDED ROLLS" delay=420
+      FlavourChip caption="SHAREABLE LINKS" delay=510
+      FlavourChip caption="CHARACTER SHEETS" delay=600
     }
   }
 
-  col w=fill gap=18 pad=24 style=fx.card shadow=shadow.card {
+  col w=fill gap=18 pad=24 style=fx.card shadow=shadow.card \
+      animate=unfurl,700,once,ease-out,700 {
     // Filter — one field narrows all three lists at once.
-    row#filter style=fx.field h=48 pad=0,16 gap=12 align=center {
-      text "FILTER" style=text.label color=color.gold nowrap
-      text#query field=filter w=fill h=20 style=text.field color=color.bone
-      text param.match_hint style=text.hint color=color.ash nowrap
+    row#filter style=fx.field h=48 pad=0,16 gap=12 align=center \
+        transition=160,ease-out {
+      when hover { stroke=color.ochre stroke-w=1.5 }
+      text "FILTER" style=text.label color=color.ochre nowrap
+      text#query field=filter w=fill h=20 style=text.field color=color.ink
+      text param.match_hint style=text.hint color=color.inkSoft nowrap
     }
 
     row#pickers w=fill gap=16 align=start {
@@ -142,13 +185,13 @@ col w=fill gap=30 {
     // button on the right.
     row#action w=fill gap=16 align=center {
       text "anything left on random is rolled for you" style=text.hint \
-          color=color.ash w=fill align-text=start
+          color=color.inkSoft w=fill align-text=start
       row#generate w=hug h=56 pad=0,38 pack=center align=center \
-          style=fx.button shadow=shadow.lift act=generate {
-        when hover { bg=linear(180, #F03048 0%, #B22033 100%) }
+          style=fx.button shadow=shadow.lift act=generate transition=160,ease-out {
+        when hover { bg=linear(180, #C4403A 0%, #8E2426 100%) scale=1.03 }
         when pressed { opacity=0.85 }
-        when focus-visible { stroke=color.gold stroke-w=3 stroke-align=inside }
-        text "GENERATE CHARACTER" style=text.button color=color.bone nowrap
+        when focus-visible { stroke=color.ochre stroke-w=3 stroke-align=inside }
+        text "GENERATE CHARACTER" style=text.button color=#F4ECD8 nowrap
       }
     }
   }
