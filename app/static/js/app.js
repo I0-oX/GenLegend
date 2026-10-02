@@ -252,6 +252,11 @@
             name: name,
             picked: name === current,
         }));
+        // The overlay list mounts on the next paint frames — re-mark
+        // scrollables once it exists.
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            containOverscroll(state.sheet.shadowRoot);
+        }));
     }
 
     /* Mirrors app/parameters.py specialization_selection(). */
@@ -574,6 +579,20 @@
         }
     }
 
+    /* Slab scroll containers live inside the shadow layers; a wheel that
+     * reaches their edge chains to the document ("the whole page scrolls").
+     * Shadow DOM can't be styled from the page, so mark every scrollable
+     * node with overscroll-behavior: contain from JS. */
+    function containOverscroll(scope) {
+        if (!scope || !scope.querySelectorAll) return;
+        for (const el of scope.querySelectorAll('*')) {
+            if (el.scrollHeight > el.clientHeight + 4
+                || el.scrollWidth > el.clientWidth + 4) {
+                el.style.overscrollBehavior = 'contain';
+            }
+        }
+    }
+
     async function boot() {
         try {
             await loadChoices();
@@ -628,16 +647,19 @@
             share: () => void onShare(),
         });
 
-        /* While a selector overlay is open, wheel over the sheet (toolbar or
-         * its attached option list) must not scroll the document; the slab
-         * kernel owns the list scroll. */
-        document.addEventListener('wheel', (event) => {
+        containOverscroll(state.sheet.shadowRoot);
+        /* Slab ignores wheel events that land on a .slab-hole row (its own
+         * handler returns without preventDefault), so the native default
+         * chains to the document — "the whole page scrolls". The kernel
+         * DOES preventDefault the wheels it consumes; block only the rest,
+         * and only while a selector list is open. Registered after slab's
+         * own listener, so defaultPrevented already reflects the kernel. */
+        state.sheet.addEventListener('wheel', (event) => {
+            if (event.defaultPrevented) return;
             const open = Object.values(SHEET_FIELDS).some(
-                (field) => state.sheet && state.sheet['open_' + field]
+                (field) => state.sheet['open_' + field]
             );
-            if (open && event.composedPath().includes(state.sheet)) {
-                event.preventDefault();
-            }
+            if (open) event.preventDefault();
         }, { passive: false });
 
         forgeRowsInit();

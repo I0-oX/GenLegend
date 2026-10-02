@@ -44,6 +44,9 @@
    color: #f4ecd8;
   }
   body {
+   height: auto; /* style.css pins height:100% — that truncates the column
+                    flex at the viewport and lets children overflow it */
+   min-height: 100vh;
    background-color: #0c0a11;
    background-image: radial-gradient(1100px 560px at 50% -8%, #1b1528 0%, #0c0a11 62%);
    background-attachment: fixed;
@@ -119,6 +122,6 @@
 
   <script src="/static/js/summon-loader.js"></script>
   <script src="/static/js/eldritch.js"></script>
-  <script type="module" src="/static/js/app.js?v=2"></script>
+  <script type="module" src="/static/js/app.js?v=4"></script>
 </body>
 </html>
