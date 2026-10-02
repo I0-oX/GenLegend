@@ -3,7 +3,7 @@
 #   make smoke-player   boot and generate seed 42           make replay-player   the seeded-replay rite
 #   make sweep-player   every Guild at levels 1 and 5 (add WIDE=1 for every level, Species, Background, Specialization)
 #   make slab           recompile the Home generator face (pinned slab CLI)   make slab-check  prove the committed build is in sync
-.PHONY: run dev setup smoke-player sweep-player replay-player verify-aasimar safepoint install-hooks loss-check slab slab-check
+.PHONY: run dev setup smoke-player sweep-player replay-player verify-aasimar safepoint install-hooks loss-check slab slab-check loader-script
 
 PORT ?= 8080
 VENV := .venv
@@ -64,24 +64,44 @@ loss-check:
 	$(VENV_PYTHON) scripts/loss_detector.py --staged
 
 # --- slab ------------------------------------------------------------------
-# The Home generator face is authored in app/slab/forge.slab and compiled with
-# a PINNED CLI: slab is pre-alpha and its language and kernel change without
-# notice, so an upgrade is a deliberate edit of SLAB_VERSION followed by
-# `make slab` + `make smoke-player`. The generated module and kernel WASM are
-# committed under app/static/slab/, so no deploy (Cloud Run, Vercel, Actions)
-# ever builds them. Needs `bun` on the machine that regenerates.
+# The frontend surfaces are authored in app/slab/*.slab — shell (header),
+# footer, forge (the Home generator face), sheet (the character page) — and
+# compiled with a PINNED CLI: slab is pre-alpha and its language and kernel
+# change without notice, so an upgrade is a deliberate edit of SLAB_VERSION
+# followed by `make slab` + `make smoke-player`. The generated modules and
+# kernel WASM are committed under app/static/slab/, so no deploy (Cloud Run,
+# Vercel, Actions) ever builds them. Needs `bun` on the machine that
+# regenerates. Each document compiles to its own gl-<name> web component; the
+# shared slab-runtime.js and kernel WASM are identical across documents.
 SLAB_VERSION := 0.1.0
 SLAB := bunx @stencil-hq/slab@$(SLAB_VERSION)
-SLAB_SRC := app/slab/forge.slab
 SLAB_OUT := app/static/slab
-SLAB_TAG := gl-forge
+SLAB_DOCS := app/slab/shell.slab app/slab/footer.slab app/slab/forge.slab app/slab/sheet.slab
 
 slab:
-	$(SLAB) check $(SLAB_SRC)
-	$(SLAB) gen wc $(SLAB_SRC) -o $(SLAB_OUT) --tag $(SLAB_TAG)
+	@for doc in $(SLAB_DOCS); do $(SLAB) check $$doc || exit 1; done
+	@for doc in $(SLAB_DOCS); do \
+		tag=$$(basename $$doc .slab); \
+		$(SLAB) gen wc $$doc -o $(SLAB_OUT) --tag gl-$$tag || exit 1; \
+	done
 
 slab-check:
 	@tmp=$$(mktemp -d); \
-	$(SLAB) gen wc $(SLAB_SRC) -o $$tmp --tag $(SLAB_TAG) >/dev/null && \
-	diff -r $(SLAB_OUT) $$tmp && echo "slab build is in sync with $(SLAB_SRC)"; \
-	status=$$?; rm -rf $$tmp; exit $$status
+	for doc in $(SLAB_DOCS); do \
+		tag=$$(basename $$doc .slab); \
+		$(SLAB) gen wc $$doc -o $$tmp --tag gl-$$tag >/dev/null || { \
+			echo "$$doc failed to generate"; rm -rf $$tmp; exit 1; \
+		}; \
+	done; \
+	diff -r $$tmp $(SLAB_OUT) || { \
+		echo "$(SLAB_OUT) is out of sync with $(SLAB_DOCS)"; \
+		rm -rf $$tmp; exit 1; \
+	}; \
+	rm -rf $$tmp
+	@echo "slab build is in sync with $(SLAB_DOCS)"
+
+# The static site loads the summon loader as a file; the Shiny shell inlines
+# the same script. Both come from loader_script(), so regenerating here keeps
+# them identical.
+loader-script:
+	$(VENV_PYTHON) -c "import sys; sys.path.insert(0, '.'); from AtlasVenustas.Tools_of_Loader import loader_script; open('app/static/js/summon-loader.js', 'w').write('/* Summon loader for the static slab site.\n * Generated from AtlasVenustas/Tools_of_Loader.py loader_script() -\n * regenerate with make loader-script after editing the source.\n */\n' + loader_script() + '\n')"

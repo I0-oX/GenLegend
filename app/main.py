@@ -9,15 +9,25 @@ from shiny import App
 from shiny import reactive
 from shiny import render
 from shiny import ui
+from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
-from AtlasActorLudi import character_choices
 from AtlasActorLudi import summon_player
-from AtlasActorLudi.AtlasAlusoris import nonplayer_choices
 from AtlasActorLudi.AtlasAlusoris import summon_nonplayer
 from AtlasActorLudi.AtlasAlusoris import summon_nonplayer_list
 from AtlasPugna.Map_of_Legendary_Actions import Lair
 from AtlasPugna.Map_of_Legendary_Actions import Legendary
 from AtlasPugna.Map_of_Legendary_Actions import Region
+from app.api import api
+from app.character_url import character_params_to_hash
+from app.character_url import parse_character_params_from_path
+from app.choices import BACKGROUND_CHOICES
+from app.choices import GUILD_CHOICES
+from app.choices import NONPLAYER_BACKGROUND_CHOICES
+from app.choices import NONPLAYER_GUILD_CHOICES
+from app.choices import RACE_CHOICES
+from app.choices import SPECIES_CHOICES
 from app.client import Client_Messages
 from app.components.shared import safe_int
 from app.navigation import Navigator
@@ -35,33 +45,6 @@ from app.routing import Shareable_Path_Redirect
 from app.session import Session_State
 from app.shell import app_ui
 
-
-_character_choices = character_choices()
-_nonplayer_choices = nonplayer_choices()
-SPECIES_CHOICES = (
-        "Random",
-        *_character_choices.species,
-        )
-GUILD_CHOICES = (
-        "Random",
-        *_character_choices.guilds,
-        )
-BACKGROUND_CHOICES = (
-        "Random",
-        *_character_choices.backgrounds,
-        )
-RACE_CHOICES = (
-        "Random",
-        *_nonplayer_choices.races,
-        )
-NONPLAYER_GUILD_CHOICES = (
-        "Random",
-        *_nonplayer_choices.guilds,
-        )
-NONPLAYER_BACKGROUND_CHOICES = (
-        "Random",
-        *_nonplayer_choices.backgrounds,
-        )
 _PAGE_VIEWS = {
         Page.HOME: home_page_ui(
                 SPECIES_CHOICES,
@@ -190,12 +173,63 @@ _shiny_app = App(
         server,
         static_assets={
             "/static": Path(
-                    __file__
-                    ).resolve().parent / "static",
+                __file__
+                ).resolve().parent / "static",
             },
         )
-app = Shareable_Path_Redirect(
-        _shiny_app
+
+# The slab frontend owns the site shell: index.html (app/static/site/) plus
+# the compiled components under app/static/slab/. Assets are served here so
+# the published site never reaches the legacy app; /api/* was answered by
+# app.api already; every other request falls through to the legacy Shiny
+# frontline (parked NPC/DM surfaces and their routes) until it is retired.
+app = api
+app.mount(
+        "/static",
+        StaticFiles(
+            directory=Path(
+                __file__
+                ).resolve().parent / "static",
+            ),
+        name="static",
+        )
+
+@app.get(
+        "/",
+        include_in_schema=False,
+        )
+def site_index() -> FileResponse:
+    """The static Home shell."""
+    return FileResponse(
+        Path(
+            __file__
+            ).resolve().parent / "static" / "site" / "index.html",
+        )
+
+@app.get(
+        "/character/{path:path}",
+        include_in_schema=False,
+        )
+def character_link(path: str) -> RedirectResponse:
+    """Legacy shareable links → the same character under the hash router."""
+    params = parse_character_params_from_path(
+            f"/character/{path}"
+            )
+    if params is None:
+        return RedirectResponse(
+                "/",
+                status_code=302,
+                )
+    return RedirectResponse(
+            "/" + character_params_to_hash(params),
+            status_code=302,
+            )
+
+app.mount(
+        "/",
+        Shareable_Path_Redirect(
+                _shiny_app
+                ),
         )
 
 __all__ = (

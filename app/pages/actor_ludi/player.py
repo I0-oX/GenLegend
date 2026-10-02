@@ -16,6 +16,10 @@ from app.components import build_character_sheet
 from app.components.shared import safe_int
 from app.navigation import Navigator
 from app.navigation import Page
+from app.parameters import parameters_from_data
+from app.parameters import selection_or_none
+from app.parameters import specialization_options
+from app.parameters import specialization_selection
 from app.session import Session_State
 
 
@@ -151,125 +155,6 @@ def page_ui(
             )
 
 
-def _selection_or_none(
-        value: Any,
-        ) -> str | None:
-    if not value or value == "Random":
-        return None
-    return value
-
-
-def _clean_parameter(
-        value: Any,
-        ) -> str | None:
-    if value is None:
-        return None
-    return _selection_or_none(
-            str(value).strip()
-            )
-
-
-def _specialization_options(
-        catalogue,
-        guild,
-        ):
-    return tuple(
-            ["Random"]
-            + list(
-                    catalogue.get(
-                            guild,
-                            (),
-                            )
-                    )
-            )
-
-
-def _specialization_selection(
-        current,
-        selected_guild,
-        available,
-        ):
-    if current.get("char_class") != selected_guild:
-        return "Random"
-    specialization = current.get("specialization")
-    if specialization in available:
-        return specialization
-    return "Random"
-
-
-def _parameters_from_data(
-        data,
-        fallback=None,
-        ):
-    base = fallback or {}
-    payload = data or {}
-    level = max(
-            1,
-            min(
-                    20,
-                    safe_int(
-                            payload.get(
-                                    "Level",
-                                    base.get("level", 1),
-                                    ),
-                            1,
-                            ),
-                    ),
-            )
-    seed_value = payload.get(
-            "Seed",
-            payload.get(
-                    "seed",
-                    base.get("seed"),
-                    ),
-            )
-    try:
-        seed = (
-                int(seed_value)
-                if seed_value is not None
-                else None
-                )
-    except (
-            TypeError,
-            ValueError,
-            ):
-        seed = None
-    return {
-            "species": _clean_parameter(
-                    payload.get(
-                            "Species",
-                            base.get("species"),
-                            )
-                    ),
-            "char_class": _clean_parameter(
-                    payload.get(
-                            "Class",
-                            base.get("char_class"),
-                            )
-                    ),
-            "specialization": _clean_parameter(
-                    payload.get(
-                            "Specialization",
-                            base.get("specialization"),
-                            )
-                    ),
-            "background": _clean_parameter(
-                    payload.get(
-                            "Background",
-                            base.get("background"),
-                            )
-                    ),
-            "level": level,
-            "gender": _clean_parameter(
-                    payload.get(
-                            "Gender",
-                            base.get("gender"),
-                            )
-                    ),
-            "seed": seed,
-            }
-
-
 def mount_page(
         input: Any,
         output: Any,
@@ -314,13 +199,13 @@ def mount_page(
                         valid_guilds,
                         ),
                 )
-        selected_guild = _selection_or_none(
+        selected_guild = selection_or_none(
                 selected_or_random(
                         parameters.get("char_class"),
                         valid_guilds,
                         )
                 )
-        available_specializations = _specialization_options(
+        available_specializations = specialization_options(
                 specialization_choices,
                 selected_guild,
                 )
@@ -397,7 +282,7 @@ def mount_page(
                     seed=parameters.get("seed"),
                     )
             data = character.to_dict()
-            canonical = _parameters_from_data(
+            canonical = parameters_from_data(
                     data,
                     fallback=parameters,
                     )
@@ -420,15 +305,15 @@ def mount_page(
     @reactive.effect
     def update_specialization_selector(
             ):
-        selected_guild = _selection_or_none(
+        selected_guild = selection_or_none(
                 input.char_sheet_class()
                 )
-        available = _specialization_options(
+        available = specialization_options(
                 specialization_choices,
                 selected_guild,
                 )
         current = state.player_parameters() or {}
-        selected = _specialization_selection(
+        selected = specialization_selection(
                 current,
                 selected_guild,
                 available,
@@ -501,13 +386,13 @@ def mount_page(
         client.set_loader("show")
         generate(
                 {
-                        "species": _selection_or_none(
+                        "species": selection_or_none(
                                 input.char_species()
                                 ),
-                        "char_class": _selection_or_none(
+                        "char_class": selection_or_none(
                                 input.char_class()
                                 ),
-                        "background": _selection_or_none(
+                        "background": selection_or_none(
                                 input.char_background()
                                 ),
                         "level": 1,
@@ -519,7 +404,7 @@ def mount_page(
             ):
         current = (
                 state.player_parameters()
-                or _parameters_from_data(
+                or parameters_from_data(
                         state.player()
                         )
                 )
@@ -569,23 +454,23 @@ def mount_page(
             ):
         current = (
                 state.player_parameters()
-                or _parameters_from_data(
+                or parameters_from_data(
                         state.player()
                         )
                 )
         client.set_loader("show")
         generate(
                 {
-                        "species": _selection_or_none(
+                        "species": selection_or_none(
                                 input.char_sheet_species()
                                 ),
-                        "char_class": _selection_or_none(
+                        "char_class": selection_or_none(
                                 input.char_sheet_class()
                                 ),
-                        "specialization": _selection_or_none(
+                        "specialization": selection_or_none(
                                 input.char_sheet_specialization()
                                 ),
-                        "background": _selection_or_none(
+                        "background": selection_or_none(
                                 input.char_sheet_background()
                                 ),
                         "gender": current.get("gender"),
@@ -608,7 +493,7 @@ def mount_page(
             ):
         current = (
                 state.player_parameters()
-                or _parameters_from_data(
+                or parameters_from_data(
                         state.player()
                         )
                 )

@@ -1,0 +1,229 @@
+// Gen Legend — the character page bar: the reforge card (four selectors, the
+// level stepper, generate, share) and the failure card. Compiled with
+// @stencil-hq/slab@0.1.0 → app/static/slab/sheet.* (`make slab`); mounted by
+// app/static/js/app.js, which answers every signal against
+// POST /api/character/generate. The generated sheet HTML goes in the
+// #character_result div that follows <gl-sheet> in index.html (slab 0.1.0
+// cannot project host children).
+//
+// Signals: open_species / open_background / open_class / open_specialization
+// toggle one dropdown (the bridge swaps param.field_options to match),
+// pick carries "field|Name" from the option list, level_down / level_up
+// re-forge immediately, generate applies the picked dimensions, share copies
+// the canonical character URL.
+//
+// House palette (shared by shell / footer / forge / sheet): night is the
+// page ground, cave the panel surface, hairline lines instead of heavy
+// borders, gold for accent, ember for the one loud action, bone/ash text.
+
+tokens {
+  color {
+    night     #0C0A11   // page ground, wells
+    cave      #171320   // card surface
+    caveHover #241E31   // raised surface, option hover
+    line      #342C47   // hairline borders
+    gold      #E9C46A   // accent, values, carets
+    goldDeep  #B8933D   // resting accent stroke
+    ember     #D7263D   // the loud one
+    emberDeep #A31B2F   // pressed
+    bone      #F4ECD8   // primary text
+    ash       #A79DBB   // secondary text
+  }
+  text {
+    kicker { family "Cinzel"; size 13; weight 700; tracking 3 }
+    label  { family "Cinzel"; size 11; weight 700; tracking 1.6 }
+    opt    { family "Eagle Lake"; size 15; weight 400 }
+    field  { family "Eagle Lake"; size 14; weight 400 }
+    button { family "Cinzel"; size 14; weight 700; tracking 1.8 }
+    level  { family "Cinzel"; size 17; weight 700 }
+    hint   { family "Cinzel"; size 11; weight 700; tracking 1.2 }
+  }
+  fx {
+    card  { bg #171320; stroke #342C47; stroke-w 1; radius 14 }
+    field { bg #0C0A11; stroke #342C47; stroke-w 1; radius 10 }
+    well  { bg #0C0A11; stroke #342C47; stroke-w 1; radius 10 }
+    step  { bg #0C0A11; stroke #342C47; stroke-w 1; radius 10 }
+    button { bg linear(180, #E11F35 0%, #A31B2F 100%); radius 10 }
+    ghost { stroke #342C47; stroke-w 1; radius 10 }
+  }
+  shadow {
+    card 0,12,32,#00000066
+    well inset,0,2,8,#00000059
+    lift 0,10,26,#D7263D40
+  }
+}
+
+// One dropdown option. The host keys every item "field|Name", so a single
+// `pick` signal carries both the selector and the choice.
+def Option(name="", picked=false) export {
+  row w=fill h=34 pad=6,10 radius=6 align=center act=pick {
+    when hover { bg=color.caveHover }
+    when pressed { opacity=0.8 }
+    when focus-visible { stroke=color.gold stroke-w=2 stroke-align=inside }
+    when picked {
+      bg=color.caveHover
+      stroke=color.goldDeep
+      stroke-w=1
+      stroke-align=inside
+    }
+    text name style=text.opt color=color.bone w=fill ellipsis nowrap
+  }
+}
+
+// One selector: label and the picked value in a well. The option list is an
+// anchored overlay at the card level (§6.10) so opening it does NOT grow
+// the toolbar — attach= points at this field row's stable node key.
+def Selector(caption, value, action) {
+  col key=sel w=fill gap=5 {
+    text caption style=text.label color=color.ash
+    row key=field w=fill h=44 pad=0,12 gap=8 align=center style=fx.field act=action {
+      when hover { bg=color.caveHover stroke=color.goldDeep stroke-w=1 }
+      when pressed { opacity=0.85 }
+      when focus-visible { stroke=color.gold stroke-w=2 stroke-align=inside }
+      text value style=text.opt color=color.bone w=fill ellipsis nowrap
+      text "▾" style=text.opt color=color.gold
+    }
+  }
+}
+
+params {
+  title          text = "Character Sheet"
+  species        text = "Random"
+  background     text = "Random"
+  char_class     text = "Random"
+  specialization text = "Random"
+  open_species        bool = false        // exactly one selector opens at a time
+  open_background     bool = false
+  open_char_class     bool = false
+  open_specialization bool = false
+  field_options       list(Option) = []   // options for the open selector
+  level          text = "1"
+  busy           bool = false
+  error_shown    bool = false
+  error          text = ""
+  share_status   text = ""
+  share_error    bool = false
+}
+
+col key=page w=fill gap=14 {
+  // The card is a stack: the flow column is the visible card; the four
+  // option overlays are siblings AFTER it, so they paint above the actions
+  // row and never contribute to the card's hug height.
+  stack key=card w=fill {
+    col key=flow w=fill pad=18 gap=14 style=fx.card shadow=shadow.card {
+      // Toolbar head: the kicker on the left, the share status on the right.
+      row key=head w=fill align=center gap=12 {
+        text param.title style=text.kicker color=color.gold w=fill
+        when share_error {
+          text param.share_status style=text.hint color=color.ember
+        }
+        when !share_error {
+          text param.share_status style=text.hint color=color.ash
+        }
+      }
+
+      row key=selects w=fill gap=12 align=start {
+        when w<860 { axis=col }
+        Selector caption="SPECIES" value=param.species action=open_species
+        Selector caption="BACKGROUND" value=param.background action=open_background
+        Selector caption="CLASS" value=param.char_class action=open_class
+        Selector caption="SPECIALIZATION" value=param.specialization action=open_specialization
+      }
+
+      row key=actions w=fill gap=16 align=center {
+        when w<860 { axis=col }
+
+        // Level stepper — both steps re-forge at once.
+        row w=hug gap=8 align=center {
+          row w=44 h=44 style=fx.step act=level_down align=center pack=center {
+            when hover { bg=color.caveHover stroke=color.goldDeep stroke-w=1 }
+            when pressed { opacity=0.8 }
+            text "-" style=text.level color=color.bone align-text=center
+          }
+          col w=hug align=center gap=2 {
+            text "LEVEL" style=text.label color=color.ash align-text=center
+            text param.level style=text.level color=color.gold align-text=center
+          }
+          row w=44 h=44 style=fx.step act=level_up align=center pack=center {
+            when hover { bg=color.caveHover stroke=color.goldDeep stroke-w=1 }
+            when pressed { opacity=0.8 }
+            text "+" style=text.level color=color.bone align-text=center
+          }
+        }
+
+        spacer
+
+        when !busy {
+          row w=hug h=44 pad=0,24 style=fx.button shadow=shadow.lift act=generate align=center {
+            when hover { bg=linear(180, #F03048 0%, #B22033 100%) }
+            when pressed { opacity=0.85 }
+            when focus-visible { stroke=color.gold stroke-w=3 stroke-align=inside }
+            text "GENERATE" style=text.button color=color.bone nowrap
+          }
+          row w=hug h=44 pad=0,24 style=fx.ghost act=share align=center {
+            when hover { bg=color.caveHover stroke=color.goldDeep stroke-w=1 }
+            when pressed { opacity=0.8 }
+            when focus-visible { stroke=color.gold stroke-w=2 stroke-align=inside }
+            text "SHARE" style=text.button color=color.gold nowrap
+          }
+        }
+        when busy {
+          row w=hug h=44 pad=0,24 align=center {
+            text "FORGING…" style=text.button color=color.ash nowrap
+          }
+        }
+      }
+    }
+
+    // Option overlays: one per selector, anchored under its field. The
+    // bridge fills param.field_options for whichever selector is open;
+    // gravity/collide keep the list inside the viewport.
+    when open_species {
+      col w=24% min-w=240 h=176 pad=6 gap=3 style=fx.well radius=12 \
+          shadow=0,18,44,#000000CC scroll \
+          scrollbar=auto scrollbar-w=4 scrollbar-fg=color.gold scrollbar-bg=#E9C46A33 \
+          attach="page/card/flow/selects/Selector@0/sel/field" \
+          gravity=below-start collide=none offset=0,6 {
+        when w<860 { w=fill }
+        each param.field_options #option
+      }
+    }
+    when open_background {
+      col w=24% min-w=240 h=176 pad=6 gap=3 style=fx.well radius=12 \
+          shadow=0,18,44,#000000CC scroll \
+          scrollbar=auto scrollbar-w=4 scrollbar-fg=color.gold scrollbar-bg=#E9C46A33 \
+          attach="page/card/flow/selects/Selector@1/sel/field" \
+          gravity=below-start collide=none offset=0,6 {
+        when w<860 { w=fill }
+        each param.field_options #option
+      }
+    }
+    when open_char_class {
+      col w=24% min-w=240 h=176 pad=6 gap=3 style=fx.well radius=12 \
+          shadow=0,18,44,#000000CC scroll \
+          scrollbar=auto scrollbar-w=4 scrollbar-fg=color.gold scrollbar-bg=#E9C46A33 \
+          attach="page/card/flow/selects/Selector@2/sel/field" \
+          gravity=below-start collide=none offset=0,6 {
+        when w<860 { w=fill }
+        each param.field_options #option
+      }
+    }
+    when open_specialization {
+      col w=24% min-w=240 h=176 pad=6 gap=3 style=fx.well radius=12 \
+          shadow=0,18,44,#000000CC scroll \
+          scrollbar=auto scrollbar-w=4 scrollbar-fg=color.gold scrollbar-bg=#E9C46A33 \
+          attach="page/card/flow/selects/Selector@3/sel/field" \
+          gravity=below-start collide=none offset=0,6 {
+        when w<860 { w=fill }
+        each param.field_options #option
+      }
+    }
+  }
+
+  when error_shown {
+    col key=failure w=fill pad=16 gap=6 style=fx.card shadow=shadow.card {
+      text "THE FORGE COULD NOT FINISH" style=text.label color=color.ember
+      text param.error style=text.field color=color.bone w=fill
+    }
+  }
+}

@@ -1,0 +1,57 @@
+// Gen Legend — the page footer for the static slab frontend. Compiled with
+// @stencil-hq/slab@0.1.0 → app/static/slab/footer.* (`make slab`); mounted
+// by app/static/js/app.js as the last child of <body>, after the views.
+// The links are signals: the bridge opens the three external URLs.
+//
+// Signals: open_about, open_wiki, open_julio.
+
+tokens {
+  color {
+    night     #0C0A11   // page ground
+    cave      #171320   // panel surface
+    line      #342C47   // hairline borders
+    gold      #E9C46A   // accent
+    goldDeep  #B8933D   // resting accent
+    bone      #F4ECD8   // primary text
+    ash       #A79DBB   // secondary text
+  }
+  text {
+    link { family "Cinzel"; size 12; weight 700; tracking 1.4 }
+    by   { family "Cinzel"; size 11; weight 700; tracking 1.4 }
+  }
+}
+
+// One footer separator, so the "|" inherits its padding from a row.
+def Sep() {
+  row w=hug pad=0,14 {
+    text "|" style=text.link color=color.ash
+  }
+}
+
+col w=fill {
+  rect w=fill h=1 bg=color.line
+  col w=fill pad=20 bg=color.night align=center gap=8 {
+    row w=hug align=center {
+      row w=hug act=open_about {
+        when hover { opacity=0.75 }
+        when pressed { opacity=0.6 }
+        text "About Us" style=text.link color=color.bone nowrap
+      }
+      Sep
+      row w=hug act=open_wiki {
+        when hover { opacity=0.75 }
+        when pressed { opacity=0.6 }
+        text "Lore Wiki" style=text.link color=color.bone nowrap
+      }
+      Sep
+      row w=hug align=center gap=6 {
+        text "By" style=text.by color=color.ash
+        row w=hug act=open_julio {
+          when hover { opacity=0.75 }
+          when pressed { opacity=0.6 }
+          text "Julio Toboso" style=text.by color=color.gold nowrap
+        }
+      }
+    }
+  }
+}

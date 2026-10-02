@@ -1,4 +1,6 @@
-# Python 3.10+ (3.14 in production). Web app: Shiny only. `make setup` installs into .venv.
+# Python 3.10+ (3.14 in production). JSON API + slab frontend; the Shiny UI stays
+# up as fallthrough until QST-0144 phase 3 swaps it. `make setup` installs into .venv.
+fastapi==0.142.2
 shiny==1.6.3
 
 # Tag-Oriented Programming: TopKit (formerly TagKit), the reference implementation,

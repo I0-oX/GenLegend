@@ -1,0 +1,70 @@
+// Gen Legend — the page header for the static slab frontend: brand plus
+// navigation. Compiled with @stencil-hq/slab@0.1.0 → app/static/slab/shell.*
+// (`make slab`); mounted by app/static/js/app.js as the first child of
+// <body>, with the views and footer.slab's <gl-footer> as its siblings — slab
+// 0.1.0 has no host-child projection, so the chrome never wraps content.
+//
+// Signals: nav_home / nav_character are hash routes; nav_npc / nav_npclist /
+// nav_dm are the parked first-publish chrome, hidden while param.parked —
+// set data-player-only="false" on <gl-shell> to restore them.
+//
+// House palette (shared by shell / footer / forge / sheet): night is the
+// page ground, cave the panel surface, hairline lines instead of heavy
+// borders, gold for accent, ember for the one loud action, bone/ash text.
+
+tokens {
+  color {
+    night     #0C0A11   // page ground
+    cave      #171320   // panel surface
+    caveHover #241E31   // raised surface
+    line      #342C47   // hairline borders
+    gold      #E9C46A   // accent
+    goldDeep  #B8933D   // resting accent stroke
+    bone      #F4ECD8   // primary text
+    ash       #A79DBB   // secondary text
+    ember     #D7263D   // the loud one
+  }
+  text {
+    brand { family "Cinzel"; size 24; weight 700 }
+    nav   { family "Cinzel"; size 13; weight 700; tracking 1.6 }
+  }
+  fx {
+    pill { stroke #342C47; stroke-w 1; radius 8 }
+  }
+}
+
+// One header button. `action` is the signal name the bridge answers.
+def NavLink(caption, action) {
+  row w=hug h=38 pad=0,16 style=fx.pill align=center act=action {
+    when hover { bg=color.caveHover stroke=color.goldDeep stroke-w=1 }
+    when pressed { opacity=0.75 }
+    when focus-visible { stroke=color.gold stroke-w=2 stroke-align=inside }
+    text caption style=text.nav color=color.bone nowrap
+  }
+}
+
+col w=fill {
+  row w=fill pad=13,28 bg=color.night align=center gap=16 {
+    row#brand w=hug act=nav_home {
+      when hover { opacity=0.8 }
+      when pressed { opacity=0.65 }
+      text param.brand style=text.brand color=color.gold
+    }
+    spacer
+    row w=hug gap=10 align=center {
+      NavLink caption="Home" action=nav_home
+      NavLink caption="Character" action=nav_character
+      when !parked {
+        NavLink caption="NPC" action=nav_npc
+        NavLink caption="NPC List" action=nav_npclist
+        NavLink caption="DM" action=nav_dm
+      }
+    }
+  }
+  rect w=fill h=1 bg=color.goldDeep
+}
+
+params {
+  brand  text = "Gen Legend"
+  parked bool = true
+}

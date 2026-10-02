@@ -666,14 +666,14 @@ input[type="number"].fantasy-input {
 	align-self: start;
 	gap: 0px;
 	flex: 0 0 auto; /* do not grow to fill row; pack to top */
-	z-index: 1; /* Place it behind text */
+	box-sizing: border-box; /* width:100% must include padding+border, or the
+	                           rail cards spill over the prose column */
 
 }
 .npc-box {
     padding: 5px;
     position: relative;
     transition: all 0.3s ease;
-    z-index: 2;
     min-width: 100px;
     max-width: 180px; /* small cells don't stretch horizontally */
 }
@@ -1251,6 +1251,8 @@ header, footer {
 .sheet-rail > .stat-flow {
     width: 100%;
     margin: 0;
+    box-sizing: border-box; /* width includes padding+border, or the cards
+                               spill ~24px over the prose column */
 }
 
 .sheet-main {

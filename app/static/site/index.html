@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gen Legend</title>
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- style.css faces: the same Google Fonts the old shell linked. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:ital@0;1&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+DW+Pica">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+DW+Pica+SC">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+Great+Primer:ital@0;1">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+Great+Primer+SC">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+Double+Pica:ital@0;1">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+Double+Pica+SC">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral+SC:wght@400;600;700">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Eagle+Lake">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Italianno">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Beau+Rivage">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fleur+De+Leah">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+French+Canon+SC">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tangerine:wght@400;700">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manufacturing+Consent">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia">
+  <link rel="stylesheet" href="/static/style.css?v=2">
+  <!-- The static site's own chrome: it must come after style.css so its
+       ties win — the legacy fallthrough keeps the light theme, this page
+       is the dark slab house. -->
+  <style>
+  /* body is a column flexbox; only .main-wrap gets flex: 1 0 auto. The slab
+     chrome must never shrink or header/footer collapse to 0 height (the
+     legacy page fixed the same for <header>/<footer> in style.css). */
+  gl-shell,
+  gl-footer {
+   flex: 0 0 auto;
+  }
+
+  html {
+   background-color: #0c0a11;
+   color: #f4ecd8;
+  }
+  body {
+   background-color: #0c0a11;
+   background-image: radial-gradient(1100px 560px at 50% -8%, #1b1528 0%, #0c0a11 62%);
+   background-attachment: fixed;
+   background-repeat: no-repeat;
+   color: #f4ecd8;
+  }
+
+  /* Welcome / tablet chrome is gone: <gl-forge> owns the whole home, and
+     only owes it a generous width. */
+  .forge-host {
+   width: min(100%, 1040px);
+   margin-top: 1rem;
+  }
+
+  /* The generated sheet is content: a light framed card on the dark page.
+     The legacy result inherits colors — restore its own text color so the
+     white cards don't pick up the page's bone text. */
+  #character_result {
+   background: #fff9f0;
+   color: var(--text-color);
+   border: 1px solid #342c47;
+   border-radius: 16px;
+   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+   margin-top: 1.25rem;
+   overflow: hidden;
+   text-align: left;
+  }
+  #character_result .sheet {
+   padding: 1.5rem 1.5rem 2rem;
+   box-sizing: border-box;
+  }
+  </style>
+</head>
+<body>
+  <!-- The summon loader overlay (AtlasVenustas/Tools_of_Loader.py). -->
+  <div id="loader" aria-live="polite" aria-busy="true">
+    <div class="sol-layer"></div>
+    <div class="orbit-layer orbit1"></div>
+    <div class="orbit-layer orbit2"></div>
+    <div class="orbit-layer orbit3"></div>
+    <div id="loader-message">Summoning your legend...</div>
+  </div>
+
+  <!-- Page chrome in slab: header (app/slab/shell.slab → <gl-shell>).
+       data-player-only parks the NPC/DM navigation; set it to "false" to
+       restore that chrome together with PLAYER_ONLY_PUBLISH. -->
+  <gl-shell data-player-only="true"></gl-shell>
+
+  <div class="main-wrap">
+    <div class="container">
+
+      <!-- Home: the slab hero + forge (app/slab/forge.slab → <gl-forge>).
+           The component owns the headline, the flavour chips, the three
+           pickers and the generate action; the page owes it a width. -->
+      <section id="view-home" class="main-content">
+        <div id="forge-host" class="forge-host">
+          <gl-forge></gl-forge>
+        </div>
+      </section>
+
+      <!-- Character Sheet: the slab reforge bar plus the generated sheet
+           HTML, which app.js drops into #character_result. -->
+      <section id="view-sheet" hidden>
+        <gl-sheet></gl-sheet>
+        <div id="character_result"></div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Page chrome in slab: footer (app/slab/footer.slab → <gl-footer>). -->
+  <gl-footer></gl-footer>
+
+  <script src="/static/js/summon-loader.js"></script>
+  <script src="/static/js/eldritch.js"></script>
+  <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>
