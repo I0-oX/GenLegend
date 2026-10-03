@@ -26,6 +26,7 @@ from app.choices import GUILD_CHOICES
 from app.choices import NONPLAYER_BACKGROUND_CHOICES
 from app.choices import NONPLAYER_GUILD_CHOICES
 from app.choices import RACE_CHOICES
+from app.choices import SPECIALIZATIONS
 from app.choices import SPECIES_CHOICES
 from app.client import Client_Messages
 from app.components.shared import safe_int
@@ -111,7 +112,7 @@ def server(
             summon_player=summon_player,
             species_choices=SPECIES_CHOICES,
             guild_choices=GUILD_CHOICES,
-            specialization_choices=_character_choices.specializations,
+            specialization_choices=SPECIALIZATIONS,
             background_choices=BACKGROUND_CHOICES,
             )
     mount_alusoris_page(
