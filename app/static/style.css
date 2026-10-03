@@ -1297,6 +1297,12 @@ header, footer {
     .sheet-rail .stat-flow {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    /* Ability scores follow the same two-across rhythm as the stat chips
+       above, so the rail reads as one grid instead of rows-then-cards. */
+    .sheet-rail .npc-scores {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 /* Record chip: one per line; icon sits behind-left like score boxes. */
@@ -1472,6 +1478,22 @@ header, footer {
     line-height: 1.05;
 }
 
+/* Phones: the clamp above has min > max, so it always resolves to 3.1rem —
+   59px at the 19px phone root, name wrapping to four lines with 1.5
+   leading: half the first screen before any sheet content. Size it to the
+   screen and close the leading. */
+@media (max-width: 560px) {
+    .npc-header .character-name {
+        font-size: clamp(1.85rem, 7vw, 2.3rem);
+        line-height: 1.15;
+    }
+
+    .npc-header .character-title {
+        font-size: calc(clamp(1.85rem, 7vw, 2.3rem) * 0.80);
+        line-height: 1.1;
+    }
+}
+
 /* Section titles (Species, Background, Class, tools, Equipment, Backstory). */
 .sheet-section.is-fantasy > h1,
 .sheet-section.is-fantasy > h2,
@@ -1630,6 +1652,17 @@ header, footer {
     font-size: 1.04rem;
     line-height: 1.7;
     margin: 0.35em 0 0.35em;
+}
+
+/* Phones: the sheet prose is the longest text on the site and 1.7 at
+   19.8px opens 33.6px lines on a 360px screen — too loose to track.
+   1.5 keeps desktop comfort while pulling ~2000px off the scroll.
+   (After both rules above: equal specificity, last wins.) */
+@media (max-width: 560px) {
+    .sheet-main .prose-body,
+    .sheet-main .prose-body .spell {
+        line-height: 1.5;
+    }
 }
 
 .sheet-main .prose-body .spell-separator {
