@@ -1643,6 +1643,15 @@ header, footer {
     line-height: 1.4;
 }
 
+/* Phones (house 560 breakpoint): the 0.5em meta line renders ~10.4px on a
+   390px screen — under half the 19-20px body it annotates, too small to
+   read comfortably. 0.64em lands it at ~13px; desktop keeps 0.5em. */
+@media (max-width: 560px) {
+    .sheet-main .prose-body .spell .spell-meta {
+        font-size: 0.64em;
+    }
+}
+
 /* Long-form sections — rules, backstory, spells — read as a page, not a box. */
 .npc-prose {
     grid-column: 1 / -1;
