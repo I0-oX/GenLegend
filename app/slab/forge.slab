@@ -20,7 +20,7 @@ tokens {
   color {
     parch      #DCC49A   // aged page ground (index.html matches)
     vellum     #F1E7CC   // card surface
-    raised     #EBDFBC   // hover / chips / picked rows
+    raised     #EBDFBC   // option-row hover / picked rows
     well       #DFCB9E   // inset wells (option lists)
     field      #EEE3C2   // input strips sit between card and well
     line       #96794A   // hairline borders
@@ -126,7 +126,7 @@ col w=fill gap=30 {
   // stack so the hover-gated spinning arc never reflows the layout.
   col w=fill align=center gap=14 pad=44,0,6,0 {
     // Phones: the hero is over half the first screen; keep
-    // the emblem, title, tagline and chips closer together.
+    // the emblem, title and tagline closer together.
     when w<560 { pad=30,0,4,0 }
     // The gilt seal: two concentric rings stroked with a metallic gold
     // ramp (light → ochre → deep → light reads as metal, not as a flat

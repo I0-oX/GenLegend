@@ -1285,15 +1285,17 @@ header, footer {
 /* Phones: the rail is 252px fixed — 67% of a 390px sheet —
    with the nineteen record chips stacked one per line, so the
    stat block runs half the page before any prose. The rail
-   goes full-width and the chips pack three across: the classic
-   mobile stat grid. Desktop keeps the 252px sidebar. */
+   goes full-width and the chips pack two across: three left
+   each cell ~75px, under the 90px word "Proficiency", so labels
+   broke mid-word and collided with the 30px corner glyph.
+   Desktop keeps the 252px sidebar. */
 @media (max-width: 560px) {
     .sheet-rail {
         flex: 0 0 100%;
     }
 
     .sheet-rail .stat-flow {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -2341,6 +2343,7 @@ header, footer {
 /* ---------------------------------------------------------------------------
    The slab Character Generator face (app/slab/forge.slab → app/static/slab/).
 
+   slab solves its own layout and writes the element's height; the page only
    owes it a width. The bridge that fills it lives in
    app/static/js/app.js.
    --------------------------------------------------------------------------- */

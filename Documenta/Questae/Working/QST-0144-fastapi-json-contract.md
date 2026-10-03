@@ -106,7 +106,7 @@ again — its document-level delegation contract survives verbatim (that was the
 
 The API has no UI; **every visible Player surface is a slab document** compiled with
 `make slab` and embedded as a web component. The only "vanilla JS" left is the thin
-bridge per element (`fetch` + router glue), same pattern as today's `slab-forge.js`.
+bridge per element (`fetch` + router glue), same pattern as today's `app.js` bridge.
 
 | surface | source | status |
 |---|---|---|
