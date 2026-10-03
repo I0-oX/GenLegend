@@ -1,20 +1,27 @@
-"""QST-0144: the Player generator as a JSON API.
+"""QST-0144: the Player generator — the whole ASGI application.
 
-The legacy Shiny UI stays mounted as ASGI fallthrough (see `app.main`) until the
-slab frontend owns every surface; this router answers only `/api/*`.
+One entry point for every target (make run, Docker, Vercel, smoke): it
+answers `/api/*` for the slab frontend, serves the site shell at `/`, serves
+`/static/*` with revalidation, and redirects legacy `/character/…` share paths
+onto the hash router.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
 from fastapi import Request
+from fastapi.responses import FileResponse
 from fastapi.responses import JSONResponse
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from AtlasActorLudi import summon_player
 from app.character_url import character_params_to_hash
 from app.character_url import parse_character_params_from_hash
+from app.character_url import parse_character_params_from_path
 from app.choices import BACKGROUND_CHOICES
 from app.choices import GUILD_CHOICES
 from app.choices import SPECIALIZATIONS
@@ -24,7 +31,7 @@ from app.parameters import clean_parameter
 from app.parameters import parameters_from_data
 from app.parameters import specialization_options
 
-api = FastAPI(
+app = FastAPI(
         docs_url=None,
         redoc_url=None,
         openapi_url=None,
@@ -159,7 +166,7 @@ def _seed(
     return value
 
 
-@api.get(
+@app.get(
         "/api/choices"
         )
 def read_choices() -> dict[str, Any]:
@@ -175,7 +182,7 @@ def read_choices() -> dict[str, Any]:
             }
 
 
-@api.get(
+@app.get(
         "/api/specializations"
         )
 def read_specializations(
@@ -198,7 +205,7 @@ def read_specializations(
             }
 
 
-@api.post(
+@app.post(
         "/api/character/generate"
         )
 async def post_generate(
@@ -271,6 +278,64 @@ async def post_generate(
             }
 
 
+class _RevalidateStaticFiles(StaticFiles):
+    """`/static/*` with revalidation: rebuilt JS/CSS/slab modules must never
+    be shadowed by a heuristically-cached copy (stale-asset phantom bugs)."""
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+        return response
+
+
+app.mount(
+        "/static",
+        _RevalidateStaticFiles(
+            directory=Path(
+                __file__
+                ).resolve().parent / "static",
+            ),
+        name="static",
+        )
+
+
+@app.get(
+        "/",
+        include_in_schema=False,
+        )
+def site_index() -> FileResponse:
+    """The static Home shell."""
+    return FileResponse(
+        Path(
+            __file__
+            ).resolve().parent / "static" / "site" / "index.html",
+        headers={
+            # Never let a stale index.html point at yesterday's app.js.
+            "Cache-Control": "no-cache, must-revalidate",
+            },
+        )
+
+
+@app.get(
+        "/character/{path:path}",
+        include_in_schema=False,
+        )
+def character_link(path: str) -> RedirectResponse:
+    """Legacy shareable links → the same character under the hash router."""
+    params = parse_character_params_from_path(
+            f"/character/{path}"
+            )
+    if params is None:
+        return RedirectResponse(
+                "/",
+                status_code=302,
+                )
+    return RedirectResponse(
+            "/" + character_params_to_hash(params),
+            status_code=302,
+            )
+
+
 __all__ = (
-        "api",
+        "app",
         )

@@ -1,5 +1,5 @@
 # Gen Legend: one door.
-#   make run            serve app.main:app on $(PORT)      make dev   the same, reloading on edits
+#   make run            serve app.api:app on $(PORT)      make dev   the same, reloading on edits
 #   make smoke-player   boot and generate seed 42           make replay-player   the seeded-replay rite
 #   make sweep-player   every Guild at levels 1 and 5 (add WIDE=1 for every level, Species, Background, Specialization)
 #   make slab           recompile the Home generator face (pinned slab CLI)   make slab-check  prove the committed build is in sync
@@ -7,7 +7,7 @@
 
 PORT ?= 8080
 VENV := .venv
-SHINY := $(VENV)/bin/shiny
+UVICORN := $(VENV)/bin/uvicorn
 PIP := $(VENV)/bin/pip
 VENV_PYTHON := $(VENV)/bin/python
 PYTHON := $(PYTHON_BIN)
@@ -23,21 +23,21 @@ export LDFLAGS += -L/opt/homebrew/lib
 endif
 
 run: setup
-	$(SHINY) run --port $(PORT) app.main:app
+	$(UVICORN) --port $(PORT) app.api:app
 
 dev: setup
-	$(SHINY) run --reload --port $(PORT) app.main:app
+	$(UVICORN) --reload --port $(PORT) app.api:app
 
-setup: $(SHINY)
+setup: $(UVICORN)
 
-$(SHINY):
+$(UVICORN):
 	@test -n "$(PYTHON)" || (echo "Python 3.10+ not found (3.14 recommended: brew install python@3.14)." && exit 1)
 	$(PYTHON) -m venv $(VENV)
 	$(PIP) install --upgrade pip setuptools wheel
 	$(PIP) install -r requirements.txt
 
 smoke-player: setup
-	$(VENV_PYTHON) -c "import app.main; from AtlasActorLudi.Map_of_Character_Generation import summon_player; p = summon_player(seed=42, level=1); print('smoke-player OK', getattr(p, 'name', p))"
+	$(VENV_PYTHON) -c "import app.api; from AtlasActorLudi.Map_of_Character_Generation import summon_player; p = summon_player(seed=42, level=1); print('smoke-player OK', getattr(p, 'name', p))"
 	$(VENV_PYTHON) -m AtlasVenustas.Charts_of_Printing
 	$(VENV_PYTHON) -m AtlasActorLudi.Charts_of_Build
 
@@ -100,8 +100,7 @@ slab-check:
 	rm -rf $$tmp
 	@echo "slab build is in sync with $(SLAB_DOCS)"
 
-# The static site loads the summon loader as a file; the Shiny shell inlines
-# the same script. Both come from loader_script(), so regenerating here keeps
-# them identical.
+# The static site loads the summon loader as a file; it comes from
+# loader_script(), so regenerating here keeps the file in sync with the source.
 loader-script:
 	$(VENV_PYTHON) -c "import sys; sys.path.insert(0, '.'); from AtlasVenustas.Tools_of_Loader import loader_script; open('app/static/js/summon-loader.js', 'w').write('/* Summon loader for the static slab site.\n * Generated from AtlasVenustas/Tools_of_Loader.py loader_script() -\n * regenerate with make loader-script after editing the source.\n */\n' + loader_script() + '\n')"

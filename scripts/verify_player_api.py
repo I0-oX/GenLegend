@@ -2,13 +2,13 @@
 """Verify the QST-0144 JSON API contract against the real ASGI app.
 
 Every call runs in-process (scope/receive/send, no sockets, no new
-dependencies) against `app.main:app` — FastAPI in front, the legacy Shiny
-frontline mounted behind it as fallthrough.
+dependencies) against `app.api:app` — one ASGI app for the API, the site
+shell and `/static`.
 
 Proves: choices, specializations (incl. the unknown-guild 404), generate with
 the seeded replay request (identity against the engine, byte-for-byte
 determinism), hash round-trip, re-level by re-post, the 422 error shape, and
-that the fallthrough still answers `GET /`.
+that the site still answers `GET /`.
 
 Run:
 
@@ -40,7 +40,7 @@ if str(
 # Guarded: importing only reuses its contract constants.
 from verify_player_replay import PLAYER_REQUEST
 
-import app.main as main_app
+import app.api as api_app
 from AtlasActorLudi import summon_player
 
 _FAILURES: list[str] = []
@@ -124,7 +124,7 @@ async def call(
                             )
                     )
 
-    await main_app.app(scope, receive, send)
+    await api_app.app(scope, receive, send)
     return state["status"], state["headers"], b"".join(chunks)
 
 
@@ -314,7 +314,7 @@ async def main() -> None:
             "non-string hash answers 422 ok=false",
             )
 
-    # -- the static slab site owns /; the legacy frontline is fallthrough ----
+    # -- the static slab site owns / ---------------------------------------
     status, headers, payload = await call(
             "GET",
             "/",

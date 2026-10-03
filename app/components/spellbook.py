@@ -1,4 +1,4 @@
-"""Reusable Shiny rendering for spellcasting summaries and spell cards."""
+"""Spellcasting summaries and spell cards as sheet HTML (rendered via shiny.ui)."""
 
 from __future__ import annotations
 

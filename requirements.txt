@@ -1,6 +1,11 @@
-# Python 3.10+ (3.14 in production). JSON API + slab frontend; the Shiny UI stays
-# up as fallthrough until QST-0144 phase 3 swaps it. `make setup` installs into .venv.
+# Python 3.10+ (3.14 in production). JSON API + slab frontend; `app.api:app`
+# is the single ASGI app (make run, Docker, Vercel all target it). `make setup`
+# installs into .venv.
 fastapi==0.142.2
+# ASGI server behind make run / the container / Vercel.
+uvicorn==0.54.0
+# Markup DSL: app/components/{shared,character_sheet,npc_sheet,spellbook}.py
+# render their sheet HTML with shiny.ui, so the pin is product, not UI.
 shiny==1.6.3
 
 # Tag-Oriented Programming: TopKit (formerly TagKit), the reference implementation,

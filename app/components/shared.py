@@ -1,4 +1,4 @@
-"""Shared Shiny presentation helpers for character-shaped sheets."""
+"""Shared presentation helpers for character-shaped sheets (rendered via shiny.ui)."""
 
 from __future__ import annotations
 

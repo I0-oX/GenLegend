@@ -1,4 +1,4 @@
-"""Reusable Shiny rendering for generated non-player-character sheets."""
+"""Sheet HTML for generated non-player-character sheets (rendered via shiny.ui)."""
 
 from __future__ import annotations
 

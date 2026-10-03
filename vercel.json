@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "app/main.py": {
+    "app/api.py": {
       "maxDuration": 300,
       "excludeFiles": "{.git/**,.venv/**,**/__pycache__/**,**/*.py[cod],.recovery-vault/**,Curia/**,Documenta/**,Avatar/**,SpellsEffects/**,Enchantments/**,AtlasWorldBuild/*.svg}"
     }

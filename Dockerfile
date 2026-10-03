@@ -28,4 +28,4 @@ ENV BUILD_SHA=${BUILD_SHA} \
     PORT=8080
 EXPOSE 8080
 
-CMD ["sh", "-c", "shiny run --host 0.0.0.0 --port ${PORT} app.main:app"]
+CMD ["sh", "-c", "uvicorn app.api:app --host 0.0.0.0 --port ${PORT}"]

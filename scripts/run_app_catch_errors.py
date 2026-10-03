@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Validate Shiny app startup and report the first error for the App Run/Watch agent.
+Validate API app startup and report the first error for the App Run/Watch agent.
 
 Usage:
   python scripts/run_app_catch_errors.py
 
-Exits with 0 if the Shiny app module loads without raising; exits with 1 and
+Exits with 0 if the app module loads without raising; exits with 1 and
 prints a structured error block if an exception occurs. Paste it into an agent
 chat to find the source and suggest a fix.
 """
@@ -20,8 +20,8 @@ if str(_project_root) not in sys.path:
 
 def main() -> int:
     try:
-        import app.main  # noqa: F401  # validates imports and app construction
-        print("Shiny app loaded successfully (app.main module + app object).")
+        import app.api  # noqa: F401  # validates imports and app construction
+        print("API app loaded successfully (app.api module + app object).")
         return 0
     except Exception as exc:
         tb = traceback.format_exc()

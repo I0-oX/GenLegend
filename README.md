@@ -12,7 +12,7 @@ Tickets (questae) live in `Documenta/Questae/` (new) and `Curia/Questae/` (older
 make run
 ```
 
-`make setup` builds `.venv` from `requirements.txt` the first time (Python 3.10+, 3.14 recommended). `make dev` reloads on edits. The server is `app.main:app`; there is no other entry point.
+`make setup` builds `.venv` from `requirements.txt` the first time (Python 3.10+, 3.14 recommended). `make dev` reloads on edits. The server is `app.api:app` (uvicorn); there is no other entry point.
 
 ## Prove
 
@@ -50,19 +50,14 @@ To republish without changing code: Actions → **Prove and Publish** → **Run 
 ### Vercel
 
 Vercel is the second place the site can be published, alongside Cloud Run. It
-runs the same `app.main:app`: Shiny is a plain ASGI application, and Vercel's
-Python runtime loads an ASGI app named `app`. `app/main.py` is already one of
-the filenames Vercel looks for, and `vercel.json` trims the bundle to what the
-app actually imports.
+runs the same `app.api:app`: FastAPI is a plain ASGI application, and Vercel's
+Python runtime loads an ASGI app named `app` — which `app/api.py` defines.
+`vercel.json` trims the bundle to what the app actually imports.
 
 Connect the repository in the Vercel dashboard (Project Settings → Git) and
 every push to `main` publishes, exactly as on Cloud Run. Nothing else to set:
 the framework is detected from `requirements.txt`, and `.python-version`
 (3.14) picks the interpreter.
-
-Shiny's live connection is a WebSocket at `/websocket/`, and Vercel serves
-WebSockets for Python Functions. Turn it on for the project (Settings →
-Functions → WebSockets) or the generator loads and then never reacts.
 
 To publish by hand from a checkout: `vercel deploy --prod`. To try a change
 without publishing: `vercel dev`.

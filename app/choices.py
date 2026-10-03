@@ -1,7 +1,7 @@
 """The generator's choice catalogues — built once, shared by UI and JSON API.
 
-`app.main` (legacy Shiny UI) and `app.api` (QST-0144) must serve the exact same
-lists, so the composition lives here instead of in either web layer.
+`app.api` serves both the JSON routes and the site shell, so the composition
+lives here instead of in the web layer.
 """
 
 from __future__ import annotations
