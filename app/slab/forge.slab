@@ -34,7 +34,6 @@ tokens {
   text {
     hero    { family "Cinzel"; size 46; weight 700; tracking 4 }
     tagline { family "Cinzel"; size 15; weight 700; tracking 0.6 }
-    chip    { family "Cinzel"; size 11; weight 700; tracking 1.8 }
     label   { family "Cinzel"; size 12; weight 700; tracking 2 }
     opt     { family "Eagle Lake"; size 16; weight 400 }
     meta    { family "Cinzel"; size 12; weight 700; tracking 1.4 }
@@ -73,15 +72,6 @@ anim pop {
   0% { scale=0.2 }
   70% { scale=1.3 }
   100% { scale=1 }
-}
-
-// One hero fact: a small pill under the headline. `delay` staggers the
-// entrance so the chips land one after another.
-def FlavourChip(caption, delay=0) {
-  row w=hug h=28 pad=0,14 style=fx.pill align=center \
-      animate=unfurl,600,once,ease-out,delay {
-    text caption style=text.chip color=color.inkSoft nowrap
-  }
 }
 
 // One option row. The host assigns each item key "category|Name", so a single
@@ -129,13 +119,15 @@ params {
   species_count     text = ""
   classes_count     text = ""
   backgrounds_count text = ""
-  match_hint        text = "type to narrow every option"
 }
 
 col w=fill gap=30 {
   // Hero — this component replaces the page heading. The seal is a fixed
   // stack so the hover-gated spinning arc never reflows the layout.
   col w=fill align=center gap=14 pad=44,0,6,0 {
+    // Phones: the hero is over half the first screen; keep
+    // the emblem, title, tagline and chips closer together.
+    when w<560 { pad=30,0,4,0 }
     // The gilt seal: two concentric rings stroked with a metallic gold
     // ramp (light → ochre → deep → light reads as metal, not as a flat
     // line), a jewel at the center, and a slow conic glint resting on
@@ -165,32 +157,28 @@ col w=fill gap=30 {
     }
     text "GEN LEGEND" style=text.hero align-text=center \
         color=linear(180, #523305 0%, #8A5A12 55%, #523305 100%) \
-        animate=unfurl,700,once,ease-out,150
+        animate=unfurl,700,once,ease-out,150 {
+      // 46u Cinzel at 4u tracking runs 362u wide — 93% of a
+      // 390u screen, nearly touching its edges. 34u/2.6u lands
+      // at ~243u: same presence, breathing room.
+      when w<560 { size=34 tracking=2.6 }
+    }
     text "Forge a legendary character for your next adventure." \
         style=text.tagline color=color.inkSoft align-text=center \
         animate=unfurl,700,once,ease-out,280
-    // Phones: as a hugged line the three chips ran past the right edge and
-    // "CHARACTER SHEETS" was cut off (and squeezing them into the line
-    // only shrank the pill while the nowrap text kept painting past the
-    // viewport). Stacked under the house threshold they always fit;
-    // desktop keeps the centered one-liner.
-    row w=hug gap=8 {
-      when w<560 { axis=col }
-      FlavourChip caption="SEEDED ROLLS" delay=420
-      FlavourChip caption="SHAREABLE LINKS" delay=510
-      FlavourChip caption="CHARACTER SHEETS" delay=600
-    }
   }
 
   col w=fill gap=18 pad=24 style=fx.card shadow=shadow.card \
       animate=unfurl,700,once,ease-out,700 {
+    // Phones: 24u of side padding costs 12u of list width;
+    // the card breathes better at 18u.
+    when w<560 { pad=18 }
     // Filter — one field narrows all three lists at once.
     row#filter style=fx.field h=48 pad=0,16 gap=12 align=center \
         transition=160,ease-out {
       when hover { stroke=color.ochre stroke-w=1.5 }
       text "FILTER" style=text.label color=color.ochre nowrap
       text#query field=filter w=fill h=20 style=text.field color=color.ink
-      text param.match_hint style=text.hint color=color.inkSoft nowrap
     }
 
     row#pickers w=fill gap=16 align=start {
@@ -210,6 +198,12 @@ col w=fill gap=30 {
     // Asymmetric action row: the rule of the forge on the left, the loud
     // button on the right.
     row#action w=fill gap=16 align=center {
+      // Phones: the hint (w=fill) was squeezed into a ~30u
+      // column beside the 282u button and wrapped into a
+      // 571u-tall skinny text wall — the action row was
+      // 10× its content. Stacked, the hint gets its own
+      // full-width line and the button sits under it.
+      when w<560 { axis=col gap=12 }
       text "anything left on random is rolled for you" style=text.hint \
           color=color.inkSoft w=fill align-text=start
       row#generate w=hug h=56 pad=0,38 pack=center align=center \

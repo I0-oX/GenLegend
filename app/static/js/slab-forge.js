@@ -18,7 +18,6 @@
         classes: 'char_class',
         backgrounds: 'char_background',
     };
-    const HINT = 'type to narrow every option';
 
     const state = {
         choices: null,   // {species: [{key,name,picked}], …} once parsed
@@ -109,11 +108,6 @@
                 ? shown.length + '/' + all.length
                 : String(all.length);
         }
-        el.match_hint = query
-            ? 'filter: ' + (state.query.length > 22
-                ? state.query.slice(0, 22) + '…'
-                : state.query)
-            : HINT;
     }
 
     /* ---- slab signals ---------------------------------------------- */

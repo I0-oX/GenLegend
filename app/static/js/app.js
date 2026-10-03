@@ -38,7 +38,6 @@
         classes: 'char_class',
         backgrounds: 'background',
     };
-    const HINT = 'type to narrow every option';
     const SHEET_FIELDS = {
         open_species: 'species',
         open_background: 'background',
@@ -199,11 +198,6 @@
                 ? shown.length + '/' + all.length
                 : String(all.length);
         }
-        el.match_hint = query
-            ? 'filter: ' + (state.query.length > 22
-                ? state.query.slice(0, 22) + '…'
-                : state.query)
-            : HINT;
     }
 
     function onForgePick(event) {

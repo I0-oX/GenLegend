@@ -138,8 +138,6 @@ export declare class SlabForgeElement extends HTMLElement {
    set 'classes_count'(v: string);
    get 'backgrounds_count'(): string | undefined;
    set 'backgrounds_count'(v: string);
-   get 'match_hint'(): string | undefined;
-   set 'match_hint'(v: string);
    /** Set one scalar parameter by name. */
    setParam(name: string, v: unknown): boolean;
    /** Read the last scalar parameter value accepted by this element. */
