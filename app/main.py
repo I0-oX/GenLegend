@@ -38,10 +38,116 @@ from app.parameters import parameters_from_data
 from app.parameters import specialization_options
 
 app = FastAPI(
-        docs_url=None,
-        redoc_url=None,
-        openapi_url=None,
+        title="Gen Legend",
+        version="1.0.0",
+        description=(
+            "The Player Character generator (QST-0144). The slab frontend "
+            "reads the catalogues from `/api/choices` / "
+            "`/api/specializations` and POSTs picks to "
+            "`/api/character/generate`, which answers a canonical hash "
+            "(the share URL) plus the character's `sheet_html`. The site "
+            "shell, `/static` and legacy `/character/…` share links are "
+            "served by the same app."
+            ),
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
         )
+
+_ERROR_SCHEMA = {
+        "type": "object",
+        "properties": {
+            "ok": {
+                "type": "boolean",
+                "const": False,
+                },
+            "error": {
+                "type": "string",
+                },
+            },
+        "required": ["ok", "error"],
+        }
+
+_GENERATE_REQUEST_SCHEMA = {
+        "type": "object",
+        "description": (
+            "A character's picks. `hash` supplies a base that every explicit "
+            "field below overrides, so `{\"hash\": \"…\"}` alone regenerates "
+            "that exact character and `{\"seed\": 42}` alone rolls the rest."
+            ),
+        "properties": {
+            "hash": {
+                "type": "string",
+                "description": (
+                    "Canonical character hash: "
+                    "`#/level/species/background/class/specialization/"
+                    "gender/seed`."
+                    ),
+                },
+            "species": {
+                "type": "string",
+                "description": "Species name, or `Random`.",
+                },
+            "char_class": {
+                "type": "string",
+                "description": "Guild (class) name, or `Random`.",
+                },
+            "specialization": {
+                "type": "string",
+                "description": "Specialization name, or `Random`.",
+                },
+            "background": {
+                "type": "string",
+                "description": "Background name, or `Random`.",
+                },
+            "gender": {
+                "type": "string",
+                "description": "Pronoun label, or `Random`.",
+                },
+            "level": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20,
+                },
+            "seed": {
+                "type": ["integer", "null"],
+                "description": (
+                    "`null` (or absent) rolls a fresh seed; an integer "
+                    "replays byte-for-byte."
+                    ),
+                },
+            },
+        "additionalProperties": True,
+        }
+
+_GENERATE_RESPONSE_SCHEMA = {
+        "type": "object",
+        "properties": {
+            "ok": {
+                "type": "boolean",
+                },
+            "parameters": {
+                "type": "object",
+                "description": (
+                    "The canonical, fully resolved character parameters."
+                    ),
+                "additionalProperties": True,
+                },
+            "hash": {
+                "type": "string",
+                "description": "Share hash (empty when no seed was kept).",
+                },
+            "sheet_html": {
+                "type": "string",
+                "description": "The rendered character sheet (HTML).",
+                },
+            "error": {
+                "type": "string",
+                "description": "Present when `ok` is false (engine refusal).",
+                },
+            },
+        "required": ["ok"],
+        }
 
 _DIMENSION_FIELDS = (
         "species",
@@ -173,7 +279,8 @@ def _seed(
 
 
 @app.get(
-        "/api/choices"
+        "/api/choices",
+        tags=["catalog"],
         )
 def read_choices() -> dict[str, Any]:
     """Every option list the pickers show, with ``"Random"`` first."""
@@ -189,7 +296,18 @@ def read_choices() -> dict[str, Any]:
 
 
 @app.get(
-        "/api/specializations"
+        "/api/specializations",
+        tags=["catalog"],
+        responses={
+            404: {
+                "description": "Unknown guild.",
+                "content": {
+                    "application/json": {
+                        "schema": _ERROR_SCHEMA,
+                        },
+                    },
+                },
+            },
         )
 def read_specializations(
         guild: str | None = None,
@@ -212,12 +330,51 @@ def read_specializations(
 
 
 @app.post(
-        "/api/character/generate"
+        "/api/character/generate",
+        tags=["character"],
+        openapi_extra={
+            "requestBody": {
+                "required": False,
+                "content": {
+                    "application/json": {
+                        "schema": _GENERATE_REQUEST_SCHEMA,
+                        },
+                    },
+                },
+            },
+        responses={
+            200: {
+                "description": (
+                    "`ok: true` with the character (seeded requests replay "
+                    "byte-for-byte); `ok: false` when the engine refuses the "
+                    "combination — same card the frontend shows."
+                    ),
+                "content": {
+                    "application/json": {
+                        "schema": _GENERATE_RESPONSE_SCHEMA,
+                        },
+                    },
+                },
+            422: {
+                "description": "Malformed body.",
+                "content": {
+                    "application/json": {
+                        "schema": _ERROR_SCHEMA,
+                        },
+                    },
+                },
+            },
         )
 async def post_generate(
         request: Request,
         ):
-    """Generate (or regenerate, or re-level) a character and its sheet HTML."""
+    """Generate (or regenerate, or re-level) a character and its sheet HTML.
+
+    Body = a `hash` base plus/minus the explicit fields below. Level and seed
+    ride along, so re-posting a hash at a new level re-levels the character.
+    Malformed bodies answer `422 {ok:false, error}`; an engine refusal
+    answers `200 {ok:false, error}`.
+    """
     try:
         body = await request.json()
     except Exception:

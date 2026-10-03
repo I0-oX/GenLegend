@@ -16,6 +16,10 @@ Shiny session into request/response JSON so slab + vanilla JS can drive every Pl
 All responses `application/json; charset=utf-8`. No auth (public generator, same exposure as today).
 Same-origin only — no CORS headers.
 
+The contract also ships as OpenAPI 3.1: `GET /openapi.json`, Swagger UI at `GET /docs`, ReDoc at
+`GET /redoc`. The source is the route docstrings plus the `openapi_extra` request/response schemas
+in `app/main.py`; `scripts/verify_player_api.py` stays the wire-shape proof.
+
 ### `GET /api/choices`
 
 ```json
