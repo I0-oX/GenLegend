@@ -169,7 +169,13 @@ col w=fill gap=30 {
     text "Forge a legendary character for your next adventure." \
         style=text.tagline color=color.inkSoft align-text=center \
         animate=unfurl,700,once,ease-out,280
+    // Phones: as a hugged line the three chips ran past the right edge and
+    // "CHARACTER SHEETS" was cut off (and squeezing them into the line
+    // only shrank the pill while the nowrap text kept painting past the
+    // viewport). Stacked under the house threshold they always fit;
+    // desktop keeps the centered one-liner.
     row w=hug gap=8 {
+      when w<560 { axis=col }
       FlavourChip caption="SEEDED ROLLS" delay=420
       FlavourChip caption="SHAREABLE LINKS" delay=510
       FlavourChip caption="CHARACTER SHEETS" delay=600

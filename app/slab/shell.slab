@@ -50,6 +50,9 @@ def NavLink(caption, action) {
 
 col w=fill animate=unfurl,600,once,ease-out,350 {
   row w=fill pad=13,28 bg=color.leather align=center gap=16 {
+    // Phones: brand over nav on its own line — at 390u the one-liner ran
+    // the pills past the right edge ("Character" clipped).
+    when w<560 { axis=col pad=10,16 gap=10 }
     row#brand w=hug act=nav_home transition=160,ease-out {
       when hover { scale=1.05 }
       when pressed { opacity=0.75 }

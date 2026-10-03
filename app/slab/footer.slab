@@ -33,6 +33,10 @@ col w=fill {
   rect w=fill h=34 bg=linear(180, #2E1E1000 0%, #2E1E10FF 100%)
   col w=fill pad=20 bg=color.leather align=center gap=8 {
     row w=hug align=center {
+      // Phones: the one-liner ("About Us | Lore Wiki | By Julio Toboso")
+      // ran ~29u past the 360u edge; stacked it always fits (house
+      // threshold, same as the header and the pickers).
+      when w<560 { axis=col gap=6 }
       row w=hug act=open_about transition=140,ease-out {
         when hover { scale=1.06 color=color.gold }
         when pressed { opacity=0.6 }
