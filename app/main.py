@@ -50,7 +50,7 @@ app = FastAPI(
             "served by the same app."
             ),
         docs_url="/docs",
-        redoc_url="/redoc",
+        redoc_url=None,
         openapi_url="/openapi.json",
         )
 
