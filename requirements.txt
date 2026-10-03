@@ -1,4 +1,4 @@
-# Python 3.10+ (3.14 in production). JSON API + slab frontend; `app.api:app`
+# Python 3.10+ (3.14 in production). JSON API + slab frontend; `app.main:app`
 # is the single ASGI app (make run, Docker, Vercel all target it). `make setup`
 # installs into .venv.
 fastapi==0.142.2

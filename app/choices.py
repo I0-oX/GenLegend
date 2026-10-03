@@ -1,6 +1,6 @@
 """The generator's choice catalogues — built once, shared by UI and JSON API.
 
-`app.api` serves both the JSON routes and the site shell, so the composition
+`app.main` serves both the JSON routes and the site shell, so the composition
 lives here instead of in the web layer.
 """
 

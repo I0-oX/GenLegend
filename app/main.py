@@ -4,6 +4,12 @@ One entry point for every target (make run, Docker, Vercel, smoke): it
 answers `/api/*` for the slab frontend, serves the site shell at `/`, serves
 `/static/*` with revalidation, and redirects legacy `/character/…` share paths
 onto the hash router.
+
+The file name and the top-level name are load-bearing for Vercel: its Python
+runtime detects entrypoints by file name (app.py, index.py, server.py,
+main.py, wsgi.py, asgi.py — also inside app/) and loads the `app` variable,
+while vercel.json's `functions` key configures that entry instead of
+creating one. Renaming this module away from a detected name breaks deploys.
 """
 
 from __future__ import annotations

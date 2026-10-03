@@ -1,9 +1,9 @@
 /* The static Gen Legend frontend: slab mounts, the hash router, and the
- * JSON API (app/api.py). slab owns presentation — the shell, footer, forge,
+ * JSON API (app/main.py). slab owns presentation — the shell, footer, forge,
  * and sheet web components solve layout and paint frames from data they are
  * given — and this file is the whole seam: choices go in as params, signals
- * come out as API calls. Nothing here knows about Shiny; the legacy app is
- * only still reachable for parked surfaces and /character/ link redirects.
+ * come out as API calls. Nothing here knows about a UI server: the FastAPI
+ * app serves the API, the site shell and the /character/ link redirects.
  *
  * Signal map (the compiled elements list them in their `signals` export):
  *   gl-shell:  nav_home nav_character nav_npc nav_npclist nav_dm

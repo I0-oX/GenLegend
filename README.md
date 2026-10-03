@@ -12,7 +12,7 @@ Tickets (questae) live in `Documenta/Questae/` (new) and `Curia/Questae/` (older
 make run
 ```
 
-`make setup` builds `.venv` from `requirements.txt` the first time (Python 3.10+, 3.14 recommended). `make dev` reloads on edits. The server is `app.api:app` (uvicorn); there is no other entry point.
+`make setup` builds `.venv` from `requirements.txt` the first time (Python 3.10+, 3.14 recommended). `make dev` reloads on edits. The server is `app.main:app` (uvicorn); there is no other entry point.
 
 ## Prove
 
@@ -50,8 +50,8 @@ To republish without changing code: Actions → **Prove and Publish** → **Run 
 ### Vercel
 
 Vercel is the second place the site can be published, alongside Cloud Run. It
-runs the same `app.api:app`: FastAPI is a plain ASGI application, and Vercel's
-Python runtime loads an ASGI app named `app` — which `app/api.py` defines.
+runs the same `app.main:app`: FastAPI is a plain ASGI application, and Vercel's
+Python runtime loads an ASGI app named `app` — which `app/main.py` defines.
 `vercel.json` trims the bundle to what the app actually imports.
 
 Connect the repository in the Vercel dashboard (Project Settings → Git) and

@@ -1,5 +1,5 @@
 # Gen Legend: one door.
-#   make run            serve app.api:app on $(PORT)      make dev   the same, reloading on edits
+#   make run            serve app.main:app on $(PORT)      make dev   the same, reloading on edits
 #   make smoke-player   boot and generate seed 42           make replay-player   the seeded-replay rite
 #   make sweep-player   every Guild at levels 1 and 5 (add WIDE=1 for every level, Species, Background, Specialization)
 #   make slab           recompile the Home generator face (pinned slab CLI)   make slab-check  prove the committed build is in sync
@@ -23,10 +23,10 @@ export LDFLAGS += -L/opt/homebrew/lib
 endif
 
 run: setup
-	$(UVICORN) --port $(PORT) app.api:app
+	$(UVICORN) --port $(PORT) app.main:app
 
 dev: setup
-	$(UVICORN) --reload --port $(PORT) app.api:app
+	$(UVICORN) --reload --port $(PORT) app.main:app
 
 setup: $(UVICORN)
 
@@ -37,7 +37,7 @@ $(UVICORN):
 	$(PIP) install -r requirements.txt
 
 smoke-player: setup
-	$(VENV_PYTHON) -c "import app.api; from AtlasActorLudi.Map_of_Character_Generation import summon_player; p = summon_player(seed=42, level=1); print('smoke-player OK', getattr(p, 'name', p))"
+	$(VENV_PYTHON) -c "import app.main; from AtlasActorLudi.Map_of_Character_Generation import summon_player; p = summon_player(seed=42, level=1); print('smoke-player OK', getattr(p, 'name', p))"
 	$(VENV_PYTHON) -m AtlasVenustas.Charts_of_Printing
 	$(VENV_PYTHON) -m AtlasActorLudi.Charts_of_Build
 

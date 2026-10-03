@@ -166,7 +166,7 @@ def NonPlayer_Sheet_Of(
 
 def Sheet_Grid() -> dict[str, list[str]]:
     """Every Guild at every level for every seed, then NonPlayers on the same grid."""
-    import app.api  # noqa: F401  (the sheet builder expects the app's setup)
+    import app.main  # noqa: F401  (the sheet builder expects the app's setup)
     from AtlasLusoris.GuildKit import GUILDS
 
     grid = {}

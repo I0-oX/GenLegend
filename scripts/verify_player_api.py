@@ -2,7 +2,7 @@
 """Verify the QST-0144 JSON API contract against the real ASGI app.
 
 Every call runs in-process (scope/receive/send, no sockets, no new
-dependencies) against `app.api:app` — one ASGI app for the API, the site
+dependencies) against `app.main:app` — one ASGI app for the API, the site
 shell and `/static`.
 
 Proves: choices, specializations (incl. the unknown-guild 404), generate with
@@ -40,7 +40,7 @@ if str(
 # Guarded: importing only reuses its contract constants.
 from verify_player_replay import PLAYER_REQUEST
 
-import app.api as api_app
+import app.main as main_app
 from AtlasActorLudi import summon_player
 
 _FAILURES: list[str] = []
@@ -124,7 +124,7 @@ async def call(
                             )
                     )
 
-    await api_app.app(scope, receive, send)
+    await main_app.app(scope, receive, send)
     return state["status"], state["headers"], b"".join(chunks)
 
 
