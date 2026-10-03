@@ -6,26 +6,13 @@
   <title>Gen Legend</title>
  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- style.css faces: the same Google Fonts the old shell linked. -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:ital@0;1&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+DW+Pica">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+DW+Pica+SC">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+Great+Primer:ital@0;1">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+Great+Primer+SC">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+Double+Pica:ital@0;1">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+Double+Pica+SC">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral+SC:wght@400;600;700">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Eagle+Lake">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Italianno">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Beau+Rivage">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fleur+De+Leah">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+French+Canon+SC">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tangerine:wght@400;700">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manufacturing+Consent">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia">
+  <!-- style.css faces: the same Google Fonts the old shell linked, folded
+       into ONE css2 request (19 stylesheet fetches → 1; each request is a
+       render-blocking RTT on a phone) with display=swap so text paints
+       before the webfonts land. The old shell linked Manufacturing Consent
+       and UnifrakturMaguntia; nothing in the shipped assets names either
+       family, so they went with the fold. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Beau+Rivage&family=Cinzel:ital@0;1&family=Cinzel+Decorative&family=Eagle+Lake&family=Fleur+De+Leah&family=IM+Fell+Double+Pica:ital@0;1&family=IM+Fell+Double+Pica+SC&family=IM+Fell+DW+Pica&family=IM+Fell+DW+Pica+SC&family=IM+Fell+English&family=IM+Fell+English+SC&family=IM+Fell+French+Canon+SC&family=IM+Fell+Great+Primer:ital@0;1&family=IM+Fell+Great+Primer+SC&family=Italianno&family=Spectral+SC:wght@400;600;700&family=Tangerine:wght@400;700&display=swap">
   <link rel="stylesheet" href="/static/style.css?v=2">
   <!-- The static site's own chrome: it must come after style.css so its
        ties win — the legacy fallthrough keeps the light theme, this page
@@ -60,6 +47,7 @@
    height: auto; /* style.css pins height:100% — that truncates the column
                     flex at the viewport and lets children overflow it */
    min-height: 100vh;
+   min-height: 100dvh; /* phone toolbars: track the visible viewport */
    /* Stack its own background BELOW its negative-z children: without a
       context here, body's background paints in step 3 of the root context
       and covers <gl-parchment> (z:-2) entirely. */

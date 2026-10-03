@@ -88,6 +88,9 @@ def FlavourChip(caption, delay=0) {
 // `pick` signal carries both the category and the choice.
 def Pick(name="", picked=false) export {
   row w=fill pad=8,12 radius=8 align=center act=pick transition=160,ease-out {
+    // Touch devices (coarse pointer) get the 44u touch-target floor; a
+    // mouse keeps the tighter 38u row.
+    when coarse { pad=11,12 }
     when hover { bg=color.raised scale=1.02 }
     when pressed { opacity=0.8 }
     when focus-visible { stroke=color.ochre stroke-w=2 stroke-align=inside }

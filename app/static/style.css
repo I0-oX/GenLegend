@@ -57,6 +57,10 @@ body {
 	display: flex;
 	flex-direction: column;
 	min-height: 100vh;
+	/* Phones: 100vh is the LARGE viewport, so the sticky footer parks
+	   behind Safari/Chrome's dynamic toolbar. dvh tracks the visible
+	   viewport; browsers without it keep the vh line above. */
+	min-height: 100dvh;
 	}
 body > div {
 	display: flex;
@@ -1139,6 +1143,8 @@ html, body {
 
 .container-fluid {
     min-height: 100vh;
+    /* dvh: same dynamic-toolbar fix as body above (progressive). */
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
 }
