@@ -34,7 +34,13 @@ def run(
             ).replace(
                     "\n",
                     " ",
-                    )
+                    ).replace(
+                            "\t",
+                            " ",
+                            ).replace(
+                                    "\r",
+                                    " ",
+                                    )
 
     return {
             "content": content,
@@ -110,14 +116,20 @@ def _spaced(
     for item in runs:
         content = safe_str(
                 item.get(
-                        "content",
-                        "",
-                        ),
+                    "content",
+                    "",
+                    ),
                 "",
                 ).replace(
                         "\n",
                         " ",
-                        )
+                        ).replace(
+                                "\t",
+                                " ",
+                                ).replace(
+                                        "\r",
+                                        " ",
+                                        )
 
         if content and content.strip( ):
             cleaned.append(

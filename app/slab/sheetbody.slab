@@ -57,11 +57,17 @@ tokens {
 }
 
 // One run of prose: emphasis travels on the run, because slab has no
-// cascade to give it a style. slab 0.1.0 can paint italic only unconditionally,
-// so flavour gets its own schema below and rules keep bold alone.
+// cascade to give it a style. Not `weight=700`: a family registers ONE
+// face (registerFont is keyed by family), so weight-700 runs measure
+// against the bundled fallback's narrower metrics while the DOM paints
+// synthesized Eagle Lake — the advance comes up ~7% short and every run
+// after a bold one lands on top of it. Rubrication instead: sealing-wax
+// red is the palette's "loud one", and `color` never touches measurement.
+// slab 0.1.0 can paint italic only unconditionally, so flavour gets its
+// own schema below and rules keep the wax alone.
 def Run(content="", bold=false) export {
   span content {
-    when bold { weight=700 }
+    when bold { color=color.wax }
   }
 }
 
@@ -249,8 +255,11 @@ def Entry(name="", sub="", has_name=false, has_sub=false, \
     when has_name {
       text name style=text.subhead color=color.ink w=fill
     }
+    // `italic` on a leaf paints the literal word "italic" (0.1.0 quirk, see
+    // FlavorPara) — the sub rides a `para`, the shape every flavour line
+    // already uses, so it at least keeps its place and its small style.
     when has_sub {
-      text sub style=text.small color=color.inkSoft italic w=fill
+      para style=text.small color=color.inkSoft italic w=fill { span sub }
     }
     // A `when` box parents its children with gap 0, so each list inside one
     // gets an explicit gapped col — otherwise every paragraph, bullet and
