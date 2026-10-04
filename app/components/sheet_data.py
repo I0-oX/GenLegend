@@ -25,8 +25,9 @@ def run(
         ) -> dict:
     """One run: what it says and whether it says it loudly.
 
-    Newlines become spaces — the sheet used to be HTML, where a newline is
-    a space anyway, and slab lays out a run by words.
+    Tabs, newlines and carriage returns become spaces — the sheet used to
+    be HTML, where all three are a space anyway, and slab lays out a run
+    by words; a literal tab would paint as a tab stop (a hole in the line).
     """
     content = safe_str(
             text,
@@ -110,7 +111,7 @@ def runs_of(
 def _spaced(
         runs: list[dict],
         ) -> list[dict]:
-    """Read runs back as words: HTML's newlines were spaces all along."""
+    """Read runs back as words: HTML's whitespace was spaces all along."""
     cleaned: list[dict] = []
 
     for item in runs:
