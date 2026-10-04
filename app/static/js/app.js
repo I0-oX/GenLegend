@@ -18,7 +18,7 @@
 (() => {
     'use strict';
 
-    const SLAB_VERSION = '27';
+    const SLAB_VERSION = '32';
     // Detail marks (clouds/splotches/fibers/flecks) scattered on
     // <gl-parchment> each load — must match DETAIL in parchment.slab.
     const PARCHMENT_MARKS = 244;
@@ -464,6 +464,15 @@
         }
     }
 
+    /* The sheet body is <gl-sheetbody> (app/slab/sheetbody.slab): params
+       in, never HTML in. Assignment goes through the compiled element's
+       accessors, which is how every other slab host on this page paints. */
+    function paintSheetBody(sheet) {
+        const body = document.querySelector('gl-sheetbody');
+        if (!body || !sheet) return;
+        Object.assign(body, sheet);
+    }
+
     function applyGenerated(data) {
         state.parameters = data.parameters;
         state.hash = data.hash || '';
@@ -471,7 +480,7 @@
         state.sheet.error_shown = false;
         state.sheet.error = '';
         closeFields();
-        document.getElementById('character_result').innerHTML = data.sheet_html;
+        paintSheetBody(data.sheet_data);
         // The user may have hit Home while this ran — never yank them back
         // to the sheet, neither via the hash nor via the view itself.
         if (!state.skipRestore) {
@@ -733,6 +742,7 @@
                 import('/static/slab/footer.js?v=' + SLAB_VERSION),
                 import('/static/slab/forge.js?v=' + SLAB_VERSION),
                 import('/static/slab/sheet.js?v=' + SLAB_VERSION),
+                import('/static/slab/sheetbody.js?v=' + SLAB_VERSION),
                 import('/static/slab/parchment.js?v=' + SLAB_VERSION),
             ]).then((modules) => registerFonts(modules[2]));
         } catch (error) {

@@ -4,8 +4,15 @@ The sheet snapshot: what a reader SEES on every Character's sheet, before and af
 The fingerprint (``verify_fingerprint.py``) guards what a Character IS: stats,
 gear, training. It does not see the sheet's text. This gate does. It prints
 every Character on the grid through the real sheet builder
-(``app.components.character_sheet.build_character_sheet``), keeps only the
+(``app.components.character_sheet.character_sheet_data``), keeps only the
 visible text, one line per block, and compares it with a saved copy.
+
+The Player sheet travels as JSON now (the ``sheet_data`` the generate API
+answers and ``<gl-sheetbody>`` paints), so ``Sheet_Lines`` walks that payload
+in paint order instead of stripping tags. The slab document's own static
+labels (``PARTICULARS``, ``SKILLS``, ``MEMENTO``, …) live in
+``app/slab/sheetbody.slab`` and are outside this gate; NonPlayer sheets are
+still HTML (``build_npc_sheet``), so they keep the tag-stripping reader.
 
 Markup may change freely (a ``<b>`` becoming a ``<strong>``, a table becoming
 a list); only a change a reader would notice shows up. That is what lets the
@@ -35,6 +42,7 @@ import random
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 from verify_fingerprint import Grid_Levels
 from verify_fingerprint import Grid_Seeds
@@ -90,6 +98,379 @@ def Visible_Lines(
     return lines
 
 
+def Sheet_Lines(
+        sheet: dict,
+        ) -> list[str]:
+    """The payload's text, one line per block, in the order the slab paints.
+
+    Every string a reader could read is visited in paint order: the header,
+    the rail (chips, abilities, skills, saves, attacks, lists, spell work,
+    known spells), then the sections and everything nested under them. Marks
+    that are line art (``glyph``, ``symbol``) carry no text and are skipped,
+    exactly as the sheet shows them.
+    """
+    lines: list[str] = []
+
+    def add(
+            text: object,
+            ) -> None:
+        line = " ".join(
+                str(
+                    text
+                    ).split()
+                )
+        if line:
+            lines.append(
+                    line
+                    )
+
+    def add_runs(
+            runs: Any,
+            ) -> None:
+        add(
+            " ".join(
+                str(
+                    run.get(
+                            "content"
+                            ) or ""
+                    )
+                for run in runs or ()
+                if isinstance(
+                        run,
+                        dict,
+                        )
+                )
+            )
+
+    def walk_entry(
+            node: dict,
+            ) -> None:
+        add(
+            node.get(
+                    "name",
+                    ""
+                    )
+            )
+        add(
+            node.get(
+                    "sub",
+                    ""
+                    )
+            )
+        walk_block_body(
+            node
+            )
+        for child in node.get(
+                "entries",
+                (),
+                ):
+            walk_entry(
+                child
+                )
+
+    def walk_block_body(
+            node: dict,
+            ) -> None:
+        for paragraph in (
+                *node.get(
+                    "flavor",
+                    (),
+                    ),
+                *node.get(
+                    "paras",
+                    (),
+                    ),
+                *node.get(
+                    "bullets",
+                    (),
+                    ),
+                ):
+            add_runs(
+                paragraph.get(
+                        "runs"
+                        )
+                )
+
+    def walk_block(
+            block: dict,
+            ) -> None:
+        add(
+            block.get(
+                    "heading",
+                    ""
+                    )
+            )
+        walk_block_body(
+            block
+            )
+        for table in block.get(
+                "tables",
+                (),
+                ):
+            for row in table.get(
+                    "rows",
+                    (),
+                    ):
+                for cell in row.get(
+                        "cells",
+                        (),
+                        ):
+                    add_runs(
+                        cell.get(
+                                "runs"
+                                )
+                        )
+        for note in block.get(
+                "notes",
+                (),
+                ):
+            add_runs(
+                note.get(
+                        "runs"
+                        )
+                )
+        for child in block.get(
+                "entries",
+                (),
+                ):
+            walk_entry(
+                child
+                )
+
+    add(
+        sheet.get(
+                "name",
+                ""
+                )
+        )
+
+    if sheet.get(
+            "has_title"
+            ):
+        add(
+            sheet.get(
+                    "title"
+                    )
+            )
+
+    for chip in sheet.get(
+            "chips",
+            (),
+            ):
+        add(
+            chip.get(
+                    "caption",
+                    ""
+                    )
+            )
+        add(
+            chip.get(
+                    "value",
+                    ""
+                    )
+            )
+
+    for score in sheet.get(
+            "scores",
+            (),
+            ):
+        add(
+            f"{score.get('value', '')} {score.get('mod', '')}".strip( )
+            )
+        add(
+            score.get(
+                    "caption",
+                    ""
+                    )
+            )
+
+    for skill in sheet.get(
+            "skills",
+            (),
+            ):
+        add(
+            " ".join(
+                part
+                for part in (
+                    skill.get(
+                            "name",
+                            ""
+                            ),
+                    skill.get(
+                            "attr",
+                            ""
+                            ),
+                    skill.get(
+                            "bonus",
+                            ""
+                            ),
+                    )
+                if part
+                )
+            )
+
+    add(
+        sheet.get(
+                "passive",
+                ""
+                )
+        )
+
+    for saving_throw in sheet.get(
+            "saves",
+            (),
+            ):
+        add(
+            f"{saving_throw.get('name', '')} "
+            f"{saving_throw.get('bonus', '')}".strip( )
+            )
+
+    for attack in sheet.get(
+            "attacks",
+            (),
+            ):
+        add(
+            " ".join(
+                part
+                for part in (
+                    attack.get(
+                            "name",
+                            ""
+                            ),
+                    attack.get(
+                            "base",
+                            ""
+                            ),
+                    attack.get(
+                            "prof",
+                            ""
+                            ),
+                    )
+                if part
+                )
+            )
+
+    for group in sheet.get(
+            "lists",
+            (),
+            ):
+        add(
+            group.get(
+                    "title",
+                    ""
+                    )
+            )
+        for item in group.get(
+                "items",
+                (),
+                ):
+            add(
+                item.get(
+                        "body",
+                        ""
+                        )
+                )
+
+    for chip in sheet.get(
+            "magic",
+            (),
+            ):
+        add(
+            chip.get(
+                    "caption",
+                    ""
+                    )
+            )
+        add(
+            chip.get(
+                    "value",
+                    ""
+                    )
+            )
+
+    if sheet.get(
+            "has_slots"
+            ):
+        add(
+            sheet.get(
+                    "slots_title"
+                    )
+            )
+        for table in sheet.get(
+                "slots",
+                (),
+                ):
+            for row in table.get(
+                    "rows",
+                    (),
+                    ):
+                for cell in row.get(
+                        "cells",
+                        (),
+                        ):
+                    add_runs(
+                        cell.get(
+                                "runs"
+                                )
+                        )
+        for note in sheet.get(
+                "slot_notes",
+                (),
+                ):
+            add_runs(
+                note.get(
+                        "runs"
+                        )
+                )
+
+    for group in sheet.get(
+            "spells",
+            (),
+            ):
+        add(
+            group.get(
+                    "title",
+                    ""
+                    )
+            )
+        for item in group.get(
+                "names",
+                (),
+                ):
+            add(
+                item.get(
+                        "body",
+                        ""
+                        )
+                )
+
+    for section in sheet.get(
+            "sections",
+            (),
+            ):
+        add(
+            section.get(
+                    "numeral",
+                    ""
+                    )
+            )
+        add(
+            section.get(
+                    "title",
+                    ""
+                    )
+            )
+        for block in section.get(
+                "blocks",
+                (),
+                ):
+            walk_block(
+                block
+                )
+
+    return lines
+
+
 def Sheet_Of(
         guild: str,
         level: int,
@@ -97,7 +478,7 @@ def Sheet_Of(
         ) -> list[str]:
     """One Character's sheet, as visible lines."""
     from AtlasActorLudi.Map_of_Character_Generation import summon_player
-    from app.components.character_sheet import build_character_sheet
+    from app.components import character_sheet_data
 
     with hush():
         character = summon_player(
@@ -105,13 +486,11 @@ def Sheet_Of(
                 level=level,
                 guild=guild,
                 )
-        page = str(
-                build_character_sheet(
-                        character.to_dict()
-                        )
+        sheet = character_sheet_data(
+                character.to_dict( )
                 )
-    return Visible_Lines(
-            page
+    return Sheet_Lines(
+            sheet
             )
 
 

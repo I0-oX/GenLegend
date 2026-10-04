@@ -32,7 +32,7 @@ from app.choices import BACKGROUND_CHOICES
 from app.choices import GUILD_CHOICES
 from app.choices import SPECIALIZATIONS
 from app.choices import SPECIES_CHOICES
-from app.components import build_character_sheet
+from app.components import character_sheet_data
 from app.parameters import clean_parameter
 from app.parameters import parameters_from_data
 from app.parameters import specialization_options
@@ -45,7 +45,7 @@ app = FastAPI(
             "reads the catalogues from `/api/choices` / "
             "`/api/specializations` and POSTs picks to "
             "`/api/character/generate`, which answers a canonical hash "
-            "(the share URL) plus the character's `sheet_html`. The site "
+            "(the share URL) plus the character's `sheet_data`. The site "
             "shell, `/static` and legacy `/character/…` share links are "
             "served by the same app."
             ),
@@ -137,9 +137,13 @@ _GENERATE_RESPONSE_SCHEMA = {
                 "type": "string",
                 "description": "Share hash (empty when no seed was kept).",
                 },
-            "sheet_html": {
-                "type": "string",
-                "description": "The rendered character sheet (HTML).",
+            "sheet_data": {
+                "type": "object",
+                "description": (
+                    "The character sheet as the slab body reads it: "
+                    "`<gl-sheetbody>` params, field for field."
+                    ),
+                "additionalProperties": True,
                 },
             "error": {
                 "type": "string",
@@ -368,7 +372,7 @@ def read_specializations(
 async def post_generate(
         request: Request,
         ):
-    """Generate (or regenerate, or re-level) a character and its sheet HTML.
+    """Generate (or regenerate, or re-level) a character and its sheet data.
 
     Body = a `hash` base plus/minus the explicit fields below. Level and seed
     ride along, so re-posting a hash at a new level re-levels the character.
@@ -435,8 +439,8 @@ async def post_generate(
             "ok": True,
             "parameters": canonical,
             "hash": hash_value,
-            "sheet_html": str(
-                    build_character_sheet(data)
+            "sheet_data": character_sheet_data(
+                    data
                     ),
             }
 

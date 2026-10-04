@@ -7,6 +7,7 @@ from html import escape
 from typing import Any
 
 from AtlasVenustas import Chip
+from AtlasVenustas.Charts_of_Printing import Icon_Html
 
 from shiny import ui
 
@@ -313,7 +314,11 @@ def feature_item(
                         *[
                                 ui.span(
                                         {"class": "feature-chip"},
-                                        f"{symbol} " if symbol else "",
+                                        (
+                                            ui.HTML(f"{icon} ")
+                                            if (icon := Icon_Html(symbol))
+                                            else (f"{symbol} " if symbol else "")
+                                        ),
                                         ui.tags.strong(
                                                 f"{label}"
                                                 ),

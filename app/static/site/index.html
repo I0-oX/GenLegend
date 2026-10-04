@@ -13,7 +13,7 @@
        and UnifrakturMaguntia; nothing in the shipped assets names either
        family, so they went with the fold. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Beau+Rivage&family=Cinzel:ital@0;1&family=Cinzel+Decorative&family=Eagle+Lake&family=Fleur+De+Leah&family=IM+Fell+Double+Pica:ital@0;1&family=IM+Fell+Double+Pica+SC&family=IM+Fell+DW+Pica&family=IM+Fell+DW+Pica+SC&family=IM+Fell+English&family=IM+Fell+English+SC&family=IM+Fell+French+Canon+SC&family=IM+Fell+Great+Primer:ital@0;1&family=IM+Fell+Great+Primer+SC&family=Italianno&family=Spectral+SC:wght@400;600;700&family=Tangerine:wght@400;700&display=swap">
-  <link rel="stylesheet" href="/static/style.css?v=2">
+  <link rel="stylesheet" href="/static/style.css?v=3">
   <!-- The static site's own chrome: it must come after style.css so its
        ties win — the legacy fallthrough keeps the light theme, this page
        is the dark slab house. -->
@@ -80,39 +80,13 @@
    margin-top: 1rem;
   }
 
-  /* The generated sheet is content written ON the papyrus: no vellum
-     card, no drop shadow — the ground shows through, legacy boxes become
-     washes with an inked edge, and text is warm ink instead of neutral
-     gray. The reds (name, labels) keep the legacy primaries. */
-  #character_result {
-   background: transparent;
-   color: #33291c;
-   --back-color: #efe3c4; /* pale parchment wash for legacy panels/tables */
-   --text-color: #33291c;
-   border: 0;
-   border-radius: 0;
-   box-shadow: none;
+  /* The generated sheet is content written ON the papyrus:
+     <gl-sheetbody> (app/slab/sheetbody.slab) paints its own ink, rules and
+     padding, so the page only owes it a column and the gap under the
+     reforge bar. */
+  gl-sheetbody {
+   display: block;
    margin-top: 1.25rem;
-   overflow: hidden;
-   text-align: left;
-  }
-  #character_result .sheet {
-   padding: 1.75rem 1.75rem 2.5rem;
-   box-sizing: border-box;
-  }
-  /* Legacy white cards → translucent washes with a ruled ink edge. */
-  #character_result .npc-box,
-  #character_result .npc-textbox,
-  #character_result .npc-scores {
-   background: rgba(255, 249, 232, 0.20);
-   border: 1px solid rgba(51, 38, 18, 0.55);
-   border-radius: 3px;
-   box-shadow: none;
-   color: #33291c;
-  }
-  #character_result .symbol {
-   background-color: rgba(60, 44, 20, 0.16);
-   color: rgba(60, 44, 20, 0.55);
   }
   </style>
 </head>
@@ -148,11 +122,11 @@
         </div>
       </section>
 
-      <!-- Character Sheet: the slab reforge bar plus the generated sheet
-           HTML, which app.js drops into #character_result. -->
+      <!-- Character Sheet: the slab reforge bar plus the slab sheet body
+           (app/slab/sheetbody.slab), which app.js paints with params. -->
       <section id="view-sheet" hidden>
         <gl-sheet></gl-sheet>
-        <div id="character_result"></div>
+        <gl-sheetbody></gl-sheetbody>
       </section>
 
     </div>
@@ -163,6 +137,6 @@
 
   <script src="/static/js/summon-loader.js"></script>
   <script src="/static/js/eldritch.js"></script>
-  <script type="module" src="/static/js/app.js?v=9"></script>
+  <script type="module" src="/static/js/app.js?v=14"></script>
 </body>
 </html>

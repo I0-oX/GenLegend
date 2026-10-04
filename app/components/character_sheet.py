@@ -1,29 +1,32 @@
-"""Sheet HTML for generated player-character sheets (rendered via shiny.ui)."""
+"""Sheet data for generated player-character sheets, read by <gl-sheetbody>."""
 
 from __future__ import annotations
 
+import json
 import re
-from html import escape
 from typing import Any
 
 from shiny import ui
 
 from AtlasVenustas import Chip
 from AtlasVenustas import Section
+from AtlasVenustas.Charts_of_Printing import Icon_Name
 
 from app.components.shared import Feature_Chip_Triples
-from app.components.shared import attack_rolls_html
-from app.components.shared import feature_item
-from app.components.shared import html_prose
-from app.components.shared import prose
 from app.components.shared import safe_int
 from app.components.shared import safe_str
-from app.components.shared import sheet_branch
-from app.components.shared import skill_rows
-from app.components.shared import text_html
-from app.components.spellbook import known_spells_rail_box
-from app.components.spellbook import spellbook_html
-from app.components.spellbook import spellcasting_chips
+from app.components.shared import space_feature_labels
+from app.components.sheet_data import cell
+from app.components.sheet_data import cell_runs
+from app.components.sheet_data import chip
+from app.components.sheet_data import para
+from app.components.sheet_data import runs_of
+from app.components.sheet_data import split_prose
+from app.components.spellbook import ABILITY_NAMES
+from app.components.spellbook import known_spells_groups
+from app.components.spellbook import spell_slots_data
+from app.components.spellbook import spellbook_block
+from app.components.spellbook import spellcasting_chip_data
 
 
 _ABILITY_EMOJI = {
@@ -297,55 +300,6 @@ def _ordered_features(
             )
 
 
-def _render_feature(
-        current_feature: Any,
-        ) -> Any | None:
-    """One Feature as sheet UI, or None for a record with nothing to say."""
-    name = getattr(
-            current_feature,
-            "name",
-            None,
-            )
-
-    if name == "Creature Type":
-        return None
-
-    if not name:
-        return prose(
-                str(current_feature)
-                )
-
-    description = safe_str(
-            getattr(
-                    current_feature,
-                    "description",
-                    "",
-                    ),
-            "",
-            )
-    narrative = bool(
-            getattr(
-                    current_feature,
-                    "narrative",
-                    False,
-                    )
-            )
-
-    # A Feature with a chip and no prose is a *record*, not an entry:
-    # "Darkvision 60 ft" says everything the paragraph would have. Its
-    # chips were already collected by _iter_feature_chips.
-    if not description.strip():
-        return None
-
-    # Chips live in the left rail — keep Entries as prose only.
-    return feature_item(
-            safe_str(name),
-            description,
-            chips=None,
-            narrative=narrative,
-            )
-
-
 def _practice_markdown(
         practice: Any,
         ) -> str:
@@ -436,48 +390,6 @@ def _practice_markdown(
             )
 
 
-def _practice_entries(
-        practices: Any,
-        ) -> list[Any]:
-    """Render learned Practices without pretending they are Feature Tags."""
-    entries = []
-
-    for practice in practices or ():
-        title = safe_str(
-                practice.get(
-                        "title",
-                        "",
-                        )
-                if isinstance(
-                        practice,
-                        dict,
-                        )
-                else getattr(
-                        practice,
-                        "title",
-                        "",
-                        ),
-                "",
-                )
-        description = _practice_markdown(
-                practice
-                )
-
-        if not title or not description:
-            continue
-
-        entries.append(
-                feature_item(
-                        title,
-                        description,
-                        chips=None,
-                        narrative=False,
-                        )
-                )
-
-    return entries
-
-
 def _feature_source(
         current_feature: Any,
         ) -> str:
@@ -560,68 +472,6 @@ def _is_versatile_origin(
                     "Species Feature"
                     )
             and "Versatile" in source
-            )
-
-
-def _versatile_origin_entries(
-        current_feature: Any,
-        ) -> list[Any]:
-    """Human Versatile: the extra Origin Feat, named as a species rule."""
-    name = _feature_name(
-            current_feature
-            )
-    entries = [
-            prose(
-                    "Humans have complex lives, and they adapt quickly.\n\n"
-                    f"You have this extra Origin Feat: **{name}**."
-                    ),
-            ]
-    rendered = _render_feature(
-            current_feature
-            )
-
-    if rendered is not None:
-        entries.append(
-                rendered
-                )
-
-    return entries
-
-
-def _render_description(
-        current_feature: Any,
-        ) -> Any | None:
-    """Identity prose without repeating the section title as a lead line."""
-    if _feature_name(
-            current_feature
-            ) == "Creature Type":
-        return None
-
-    description = _feature_description(
-            current_feature
-            ).strip()
-
-    if not description:
-        return None
-
-    return prose(
-            description
-            )
-
-
-def _maybe_branch(
-        title: str,
-        entries: list[Any],
-        *,
-        level: int = 3,
-        ) -> Any | None:
-    if not entries:
-        return None
-
-    return sheet_branch(
-            title,
-            *entries,
-            level=level,
             )
 
 
@@ -760,56 +610,6 @@ def _class_identity(
     return f"{guild}, {subclass}"
 
 
-def _tool_proficiencies_branch(
-        data: dict[str, Any],
-        *,
-        level: int = 3,
-        ) -> Any | None:
-    names = _tool_proficiency_names(
-            data
-            )
-    practices = _practice_entries(
-            data.get(
-                    "Practices",
-                    (),
-                    )
-            )
-    children: list[Any] = []
-
-    if names:
-        children.append(
-                ui.tags.ul(
-                        {
-                            "class": "sheet-tool-list"
-                            },
-                        *[
-                            ui.tags.li(
-                                    name
-                                    )
-                            for name in names
-                            ],
-                        )
-                )
-
-    if practices:
-        children.append(
-                sheet_branch(
-                        "Practices",
-                        *practices,
-                        level=level + 1,
-                        )
-                )
-
-    if not children:
-        return None
-
-    return sheet_branch(
-            "Tool Proficiencies",
-            *children,
-            level=level,
-            )
-
-
 def _split_described_layers(
         text: str,
         ) -> tuple[str, list[tuple[str, str]]]:
@@ -847,400 +647,6 @@ def _split_described_layers(
     return lead, layers
 
 
-def _append_guild_layers(
-        tree: dict[str, list[Any]],
-        current_feature: Any,
-        ) -> None:
-    lead, layers = _split_described_layers(
-            _feature_description(
-                    current_feature
-                    )
-            )
-
-    if lead:
-        tree[ "class_description" ].append(
-                prose(
-                        lead
-                        )
-                )
-
-    for title, body in layers:
-        tree[ "class_layers" ].append(
-                sheet_branch(
-                        title,
-                        prose(
-                                body
-                                ),
-                        level=3,
-                        )
-                )
-
-
-def _feature_tree(
-        features: Any,
-        data: dict[str, Any],
-        ) -> dict[str, list[Any]]:
-    """Split Features into the nested sheet tree Julio asked for."""
-    tree: dict[str, list[Any]] = {
-            "species_description": [],
-            "species_features": [],
-            "species_versatile": [],
-            "background_description": [],
-            "background_hook": [],
-            "background_origin": [],
-            "class_description": [],
-            "class_layers": [],
-            "class_levels": [],
-            "class_invocations": [],
-            }
-
-    class_levels: list[tuple[tuple[int, int, int], int, int, Any]] = []
-        #-- (place, rank, order, rendered): Features and build Entries meet
-        #-- here and are sorted together by level.
-
-    for order, current_feature in enumerate(
-            _ordered_features(
-                    features
-                    )
-            ):
-        source = _feature_source(
-                current_feature
-                )
-        section = _feature_place(
-                current_feature
-                )[ 0 ]
-
-        if section == _SECTION_SPECIES:
-            if _is_versatile_origin(
-                    current_feature
-                    ):
-                tree[ "species_versatile" ].extend(
-                        _versatile_origin_entries(
-                                current_feature
-                                )
-                        )
-                continue
-            if _is_species_description(
-                    current_feature,
-                    data,
-                    ):
-                rendered = _render_description(
-                        current_feature
-                        )
-                bucket = "species_description"
-            else:
-                rendered = _render_feature(
-                        current_feature
-                        )
-                bucket = "species_features"
-        elif section == _SECTION_BACKGROUND:
-            if source.startswith(
-                    "Background Hook"
-                    ):
-                rendered = _render_feature(
-                        current_feature
-                        )
-                bucket = "background_hook"
-            elif source.startswith(
-                    (
-                        "Origin Feat",
-                        "Background Feat",
-                        )
-                    ):
-                rendered = _render_feature(
-                        current_feature
-                        )
-                bucket = "background_origin"
-            else:
-                rendered = _render_description(
-                        current_feature
-                        ) or _render_feature(
-                        current_feature
-                        )
-                bucket = "background_description"
-        else:
-            if source.startswith(
-                    "Guild"
-                    ):
-                _append_guild_layers(
-                        tree,
-                        current_feature,
-                        )
-                continue
-            elif (
-                    source.startswith(
-                            "Eldritch Invocation"
-                            )
-                    or source.startswith(
-                            "Invocation"
-                            )
-                    ):
-                rendered = _render_feature(
-                        current_feature
-                        )
-                bucket = "class_invocations"
-            else:
-                rendered = _render_feature(
-                        current_feature
-                        )
-                bucket = "class_levels"
-
-        if rendered is None:
-            continue
-
-        if bucket == "class_levels":
-            class_levels.append(
-                    (
-                            _feature_place(
-                                    current_feature
-                                    ),
-                            FEATURE_RANK,
-                            order,
-                            rendered,
-                            )
-                    )
-            continue
-
-        tree[ bucket ].append(
-                rendered
-                )
-
-    class_levels.extend(
-            _guild_build_items(
-                    data.get(
-                            "build"
-                            )
-                    )
-            )
-    class_levels.sort(
-            key=lambda item: item[ :3 ]
-            )
-    tree[ "class_levels" ] = [
-            item[ 3 ]
-            for item in class_levels
-            ]
-
-    return tree
-
-
-BUILD_RANK = 0
-FEATURE_RANK = 1
-    #-- At the same level, what the build declares prints before the
-    #-- Features still written the old way: Guild Training was always granted
-    #-- before the legacy class Progression filled its gaps.
-
-
-def _guild_build_items(
-        build: Any,
-        ) -> list[tuple[tuple[int, int, int], int, int, Any]]:
-    """The Guild section's Entries from the build, placed by level."""
-    if build is None:
-        return []
-    items = []
-    for order, built in enumerate(
-            build.entries
-            ):
-        entry = built.entry
-        if entry.section is not Section.GUILD:
-            continue
-        rendered = _render_entry(
-                entry
-                )
-        if rendered is None:
-            continue
-        items.append(
-                (
-                        (
-                                _SECTION_CLASS,
-                                1,
-                                entry.level or 0,
-                                ),
-                        BUILD_RANK,
-                        order,
-                        rendered,
-                        )
-                )
-    return items
-
-
-def _render_entry(
-        entry: Any,
-        ) -> Any | None:
-    """One read Entry as sheet UI, or None when it has no rules to print."""
-    if not entry.rules.strip():
-        return None
-    return feature_item(
-            safe_str(
-                    entry.title
-                    ),
-            entry.rules,
-            chips=None,
-            narrative=False,
-            )
-
-
-def _ability_score_boxes(
-        stats: Any,
-        ) -> list[Any]:
-    boxes: list[Any] = []
-
-    for stat, value in stats.items():
-        score = safe_int(
-                value,
-                10,
-                )
-        modifier = (
-            score - 10
-            ) // 2
-        emoji = _ABILITY_EMOJI.get(
-                safe_str(stat),
-                "",
-                )
-        symbol = (
-            [
-                ui.div(
-                        {"class": "symbol"},
-                        emoji,
-                        ),
-                ]
-            if emoji
-            else []
-            )
-
-        boxes.append(
-                ui.div(
-                        {
-                            "class": "npc-box score-row",
-                            "style": "text-align: right;",
-                            },
-                        *symbol,
-                        ui.h4(
-                                ui.HTML(
-                                        (
-                                            f"{escape(safe_str(stat))}<br>"
-                                            f"{score} ({modifier:+d})"
-                                            )
-                                        )
-                                ),
-                        )
-                )
-
-    return boxes
-
-
-def _equipment_rows(
-        equipment: Any,
-        ) -> list[Any]:
-    if equipment is None:
-        return []
-
-    # Items render themselves as Entry HTML (Venustas Scriba); escaping it
-    # would show the user literal <b>/<i> tags. Empty slots are omitted —
-    # a row of "-" tells the reader nothing.
-    rows = []
-
-    for label, attribute in _EQUIPMENT_FIELDS:
-        item = getattr(
-                equipment,
-                attribute,
-                None,
-                )
-        if item is None:
-            continue
-        rows.append(
-                ui.tags.tr(
-                        ui.tags.td(label),
-                        ui.tags.td(
-                                ui.HTML(
-                                        safe_str(item)
-                                        )
-                                ),
-                        )
-                )
-
-    # Jewelry is the one slot that holds several at once.
-    for worn in getattr(
-            equipment,
-            "jewelry",
-            [],
-            ) or []:
-        rows.append(
-                ui.tags.tr(
-                        ui.tags.td("Jewelry"),
-                        ui.tags.td(
-                                ui.HTML(
-                                        safe_str(worn)
-                                        )
-                                ),
-                        )
-                )
-
-    return rows
-
-
-def _bag_rows(
-        equipment: Any,
-        ) -> list[Any]:
-    if equipment is None:
-        return []
-
-    return [
-        ui.tags.tr(
-                ui.tags.td(
-                        safe_str(
-                                # `called` prefers an earned title
-                                # ("Club of Wounding") over the plain name.
-                                getattr(
-                                        item,
-                                        "called",
-                                        None,
-                                        )
-                                or getattr(
-                                        item,
-                                        "name",
-                                        "item",
-                                        )
-                                )
-                        ),
-                ui.tags.td(
-                        f"x{safe_str(getattr(item, 'quantity', 1))}"
-                        ),
-                ui.tags.td(
-                        f"{safe_str(getattr(item, 'weight', 0))} lbs"
-                        ),
-                ui.tags.td(
-                        f"{safe_str(getattr(item, 'value', 0))} gp"
-                        ),
-                )
-        for item in getattr(
-                equipment,
-                "bag",
-                [],
-                ) or []
-        ]
-
-
-def _saving_throw_html(
-        saving_throws: Any,
-        ) -> ui.Tag:
-    value = getattr(
-            saving_throws,
-            "string",
-            saving_throws,
-            )
-
-    if callable(value):
-        try:
-            value = value()
-        except Exception:
-            value = saving_throws
-
-    return text_html(
-            value,
-            "-",
-            )
-
-
 def _is_spellcasting_parameter_chip(
         label: str,
         ) -> bool:
@@ -1252,133 +658,6 @@ def _is_spellcasting_parameter_chip(
                 "Spell Attack Bonus",
                 )
             )
-
-
-def _character_stat_chips(
-        data: dict[str, Any],
-        ) -> list[Any]:
-    creature_type = _creature_type_label(
-            data
-            )
-
-    chips = [
-        Chip(
-                "⚖️",
-                "Alignment",
-                safe_str(
-                        data.get(
-                                "Alignment",
-                                "-",
-                                )
-                        ),
-                ),
-        Chip(
-                "👤",
-                "Creature Type",
-                creature_type,
-                ),
-        Chip(
-                "⚧",
-                "Gender",
-                safe_str(
-                        data.get(
-                                "Gender",
-                                "-",
-                                )
-                        ),
-                ),
-        Chip(
-                "🧑‍🧒",
-                "Size",
-                safe_str(
-                        data.get(
-                                "size",
-                                "-",
-                                )
-                        ),
-                ),
-        Chip(
-                "👞",
-                "Speed",
-                safe_str(
-                        data.get(
-                                "Speed",
-                                "-",
-                                )
-                        ),
-                ),
-        Chip(
-                "🏵️",
-                "Level",
-                safe_str(
-                        data.get(
-                                "Level",
-                                "-",
-                                )
-                        ),
-                ),
-        Chip(
-                "⚜️",
-                "Proficiency Bonus",
-                f"+{safe_str(data.get('PB', '-'))}",
-                ),
-        Chip(
-                "💚",
-                # The number is the ceiling, not the current pool — say so, or
-                # a reader takes it for how much the Character has left.
-                "Max Hit Points",
-                safe_str(
-                        data.get(
-                                "Health",
-                                "-",
-                                )
-                        ),
-                ),
-        Chip(
-                "🖤",
-                "Hit Dice",
-                safe_str(
-                        data.get(
-                                "HPD",
-                                "-",
-                                )
-                        ),
-                ),
-        Chip(
-                "🛡️",
-                "Armor Class",
-                safe_str(
-                        data.get(
-                                "AC",
-                                "-",
-                                )
-                        ),
-                ),
-        ]
-    for symbol, label, value in _iter_feature_chips(
-            data.get(
-                    "features"
-                    ),
-            data.get(
-                    "build"
-                    ),
-            ):
-        if _is_spellcasting_parameter_chip(
-                label
-                ):
-            continue
-
-        chips.append(
-                Chip(
-                        symbol,
-                        label,
-                        value,
-                        )
-                )
-    return [
-        ui.HTML(box)
-        for box in chips
-        ]
 
 
 def _species_identity(
@@ -1445,215 +724,673 @@ def _class_heading(
     return f"{class_title}, {subclass}"
 
 
-def _rail_named_list(
-        title: str,
-        names: list[str],
-        ) -> ui.Tag:
-    return ui.div(
-            {"class": "npc-textbox"},
-            ui.h2(
-                    title
+# ---------------------------------------------------------------------------
+# The sheet as data — what <gl-sheetbody> reads
+# ---------------------------------------------------------------------------
+# The sheet used to be built as shiny tags and rendered to HTML; it is now
+# built as the JSON the slab body declares, so a reader sees the same words
+# and the page looks like a page of a manuscript rather than a form.
+
+# Each section of the main column opens with its own line-art sigil and a
+# rubric numeral — no emoji anywhere on the sheet.
+_SECTION_MARKS = {
+        "Species": "beast-eye",
+        "Background": "footprint",
+        "Class": "crossed-swords",
+        "Equipment": "black-hand-shield",
+        "Backstory": "moon",
+        }
+
+_ROMAN = ("I", "II", "III", "IV", "V", "VI", "VII", "VIII")
+
+_ABILITY_ORDER = (
+        "STR",
+        "DEX",
+        "CON",
+        "INT",
+        "WIS",
+        "CHA",
+        )
+
+BUILD_RANK = 0
+FEATURE_RANK = 1
+    #-- At the same level, what the build declares prints before the
+    #-- Features still written the old way: Guild Training was always granted
+    #-- before the legacy class Progression filled its gaps.
+
+
+def _signed(
+        value: Any,
+        ) -> str:
+    """A modifier the way a reader writes one: ``+4``, not ``4``."""
+    try:
+        modifier = int(
+                value
+                )
+    except Exception:
+        return safe_str(
+                value,
+                "-",
+                )
+
+    return f"{modifier:+d}"
+
+
+def _md_html(
+        text: Any,
+        ) -> str:
+    """Markdown through shiny's own converter, so the words never drift."""
+    return safe_str(
+            ui.markdown(
+                    safe_str(
+                            text,
+                            "",
+                            )
                     ),
-            ui.tags.ul(
-                    *[
-                        ui.tags.li(
-                                safe_str(
-                                        name
-                                        )
-                                )
-                        for name in names
-                        ],
+            "",
+            )
+
+
+def _heading(
+        name: Any,
+        ) -> str:
+    """A feature name as a heading: the full stop a lead line took goes."""
+    return safe_str(
+            name,
+            "",
+            ).strip( ).rstrip(
+                    "."
+                    )
+
+
+def _entry(
+        name: str = "",
+        *,
+        sub: str = "",
+        flavor: list[dict] | None = None,
+        paras: list[dict] | None = None,
+        bullets: list[dict] | None = None,
+        entries: list[dict] | None = None,
+        ) -> dict:
+    """One node of a section: a heading if it has one, then what it says."""
+    return {
+            "name": name,
+            "sub": sub,
+            "flavor": flavor or [],
+            "paras": paras or [],
+            "bullets": bullets or [],
+            "entries": entries or [],
+            }
+
+
+def _block(
+        heading: str = "",
+        *,
+        flavor: list[dict] | None = None,
+        paras: list[dict] | None = None,
+        bullets: list[dict] | None = None,
+        tables: list[dict] | None = None,
+        notes: list[dict] | None = None,
+        entries: list[dict] | None = None,
+        seal: bool = False,
+        ) -> dict:
+    """One branch of a section: its heading, then its content in order."""
+    return {
+            "heading": heading,
+            "flavor": flavor or [],
+            "paras": paras or [],
+            "bullets": bullets or [],
+            "tables": tables or [],
+            "notes": notes or [],
+            "entries": entries or [],
+            "seal": seal,
+            }
+
+
+def _section(
+        title: str,
+        blocks: list[dict],
+        *,
+        numeral: str = "",
+        ) -> dict:
+    """One column section: sigil, rubric numeral, title, then its blocks."""
+    glyph = _SECTION_MARKS.get(
+            title,
+            "",
+            )
+    return {
+            "glyph": glyph,
+            "show_glyph": bool(
+                    glyph
+                    ),
+            "numeral": numeral,
+            "title": title,
+            "blocks": blocks,
+            }
+
+
+def _prose_node(
+        description: Any,
+        ) -> dict | None:
+    """Prose with no heading of its own — a nameless Entry."""
+    flavor, paras, bullets = split_prose(
+            _md_html(
+                    description
+                    )
+            )
+
+    if not (
+            flavor
+            or paras
+            or bullets
+            ):
+        return None
+
+    return _entry(
+            flavor=flavor,
+            paras=paras,
+            bullets=bullets,
+            )
+
+
+def _feature_node(
+        name: Any,
+        description: Any,
+        ) -> dict | None:
+    """One feature as an Entry: its name, then the rules it grants."""
+    node = _prose_node(
+            space_feature_labels(
+                    safe_str(
+                            description,
+                            "",
+                            ).strip( )
+                    )
+            )
+
+    if node is None:
+        return None
+
+    node[ "name" ] = _heading(
+            name
+            )
+
+    return node
+
+
+def _branch(
+        title: str,
+        children: list[Any],
+        ) -> dict | None:
+    """A titled branch as one Block, its children kept in the order given."""
+    entries = [
+        _entry_of(
+            child
+            )
+        for child in _present(
+                *children
+                )
+        ]
+
+    if not entries:
+        return None
+
+    return _block(
+            title,
+            entries=entries,
+            )
+
+
+def _entry_of(
+        node: dict,
+        ) -> dict:
+    """A nested branch read as an Entry, its heading as the name.
+
+    A nested branch never carries a table or a note — those belong to the
+    section's own blocks — so nothing of it is lost here.
+    """
+    if "name" in node:
+        return node
+
+    return _entry(
+            safe_str(
+                    node.get(
+                            "heading",
+                            "",
+                            ),
+                    "",
+                    ),
+            flavor=node.get(
+                    "flavor",
+                    [],
+                    ),
+            paras=node.get(
+                    "paras",
+                    [],
+                    ),
+            bullets=node.get(
+                    "bullets",
+                    [],
+                    ),
+            entries=node.get(
+                    "entries",
+                    [],
                     ),
             )
 
 
-def _language_body(
-        languages: Any,
-        ) -> str:
-    if hasattr(
-            languages,
-            "AsListHTML",
-            ):
-        return languages.AsListHTML()
+def _description_data(
+        current_feature: Any,
+        ) -> dict | None:
+    """Identity prose, without repeating the section title as a lead line."""
+    if _feature_name(
+            current_feature
+            ) == "Creature Type":
+        return None
 
-    langs = getattr(
-            languages,
-            "langs",
+    description = _feature_description(
+            current_feature
+            ).strip( )
+
+    if not description:
+        return None
+
+    return _prose_node(
+            description
+            )
+
+
+def _feature_data(
+        current_feature: Any,
+        ) -> dict | None:
+    """One Feature as an Entry, or None for a record with nothing to say."""
+    name = getattr(
+            current_feature,
+            "name",
             None,
             )
-    if langs:
-        return (
-            "<i>"
-            + "<br>".join(
-                    sorted(
-                            langs
-                            )
+
+    if name == "Creature Type":
+        return None
+
+    if not name:
+        return _prose_node(
+                str(
+                    current_feature
                     )
-            + "</i>"
-            )
-
-    return safe_str(
-            languages,
-            "<i>Common</i>",
-            )
-
-
-def _rail_items(
-        data: dict[str, Any],
-        stats: Any,
-        spellcaster: Any,
-        ) -> list[Any]:
-    skill_row_tags = skill_rows(
-            data.get("Skills")
-            )
-    items: list[Any] = [
-        ui.div(
-                {"class": "npc-box npc-scores"},
-                *_ability_score_boxes(stats),
-                ),
-        ui.div(
-                {"class": "npc-textbox"},
-                ui.h2("Skills"),
-                ui.tags.table(
-                        {"class": "skills-table"},
-                        ui.tags.tbody(
-                                *skill_row_tags,
-                                ),
-                        ),
-                ui.h4(
-                        (
-                            "Passive Perception: "
-                            f"{safe_str(data.get('passive_perception', '-'))}"
-                            )
-                        ),
-                ),
-        ui.div(
-                {"class": "npc-textbox"},
-                ui.h2("Saving Throws"),
-                _saving_throw_html(
-                        data.get("SavingThrow")
-                        ),
-                ),
-        ui.div(
-                {"class": "npc-textbox"},
-                ui.h2("Attack Rolls"),
-                attack_rolls_html(
-                        data.get("AttackRolls")
-                        ),
-                ),
-        ]
-    proficiencies = _combat_proficiency_names(
-            data
-            )
-
-    if proficiencies:
-        items.append(
-                _rail_named_list(
-                        "Proficiencies",
-                        proficiencies,
-                        )
                 )
 
-    tool_names = _tool_proficiency_names(
-            data
+    description = safe_str(
+            getattr(
+                    current_feature,
+                    "description",
+                    "",
+                    ),
+            "",
             )
 
-    if tool_names:
-        items.append(
-                _rail_named_list(
-                        "Tools",
-                        tool_names,
-                        )
-                )
+    # A Feature with a chip and no prose is a record, not an entry: its
+    # chips were already collected by _iter_feature_chips.
+    if not description.strip( ):
+        return None
 
-    languages = data.get(
-            "Languages"
+    return _feature_node(
+            safe_str(
+                name
+                ),
+            description,
             )
-    if languages is not None:
-        items.append(
-                ui.div(
-                        {"class": "npc-textbox"},
-                        ui.h2("Languages"),
-                        html_prose(
-                                _language_body(
-                                        languages
-                                        )
-                                ),
-                        )
+
+
+def _versatile_origin_data(
+        current_feature: Any,
+        ) -> list[dict]:
+    """Human Versatile: the extra Origin Feat, named as a species rule."""
+    name = _feature_name(
+            current_feature
+            )
+    entries: list[dict] = []
+    lead = _prose_node(
+            "Humans have complex lives, and they adapt quickly.\n\n"
+            f"You have this extra Origin Feat: **{name}**."
+            )
+
+    if lead is not None:
+        entries.append(
+                lead
                 )
 
-    if spellcaster is not None:
-        magic_chips = spellcasting_chips(
-                spellcaster
+    rendered = _feature_data(
+            current_feature
+            )
+
+    if rendered is not None:
+        entries.append(
+                rendered
                 )
 
-        if magic_chips:
-            items.append(
-                    ui.div(
-                            {"class": "stat-flow"},
-                            *magic_chips,
-                            )
+    return entries
+
+
+def _guild_layers_data(
+        tree: dict[str, list[Any]],
+        current_feature: Any,
+        ) -> None:
+    """A Guild description split into its lead prose and its named layers."""
+    lead, layers = _split_described_layers(
+            _feature_description(
+                    current_feature
+                    )
+            )
+
+    if lead:
+        node = _prose_node(
+                lead
+                )
+
+        if node is not None:
+            tree[ "class_description" ].append(
+                    node
                     )
 
-        known_spells = known_spells_rail_box(
-                spellcaster
+    for title, body in layers:
+        branch = _branch(
+                title,
+                [
+                    _prose_node(
+                        body
+                        ),
+                    ],
                 )
 
-        if known_spells is not None:
-            items.append(known_spells)
+        if branch is not None:
+            tree[ "class_layers" ].append(
+                    branch
+                    )
+
+
+def _guild_build_data(
+        build: Any,
+        ) -> list[tuple]:
+    """The Guild section's Entries from the build, placed by level."""
+    if build is None:
+        return []
+
+    items: list[tuple] = []
+
+    for order, built in enumerate(
+            build.entries
+            ):
+        entry = built.entry
+
+        if entry.section is not Section.GUILD:
+            continue
+
+        if not entry.rules.strip( ):
+            continue
+
+        node = _feature_node(
+                entry.title,
+                entry.rules,
+                )
+
+        if node is None:
+            continue
+
+        items.append(
+                (
+                    (
+                        _SECTION_CLASS,
+                        1,
+                        entry.level or 0,
+                        ),
+                    BUILD_RANK,
+                    order,
+                    node,
+                    )
+                )
 
     return items
 
 
-def _equipment_section(
-        equipment: Any,
-        ) -> ui.Tag:
-    content: list[Any] = [
-        ui.tags.table(
-                {"class": "objects-table"},
-                ui.tags.tbody(
-                        *_equipment_rows(equipment),
+def _practice_entries_data(
+        practices: Any,
+        ) -> list[dict]:
+    """Learned Practices as Entries, without pretending they are Features."""
+    entries: list[dict] = []
+
+    for practice in practices or ():
+        title = safe_str(
+                practice.get(
+                        "title",
+                        "",
+                        )
+                if isinstance(
+                        practice,
+                        dict,
+                        )
+                else getattr(
+                        practice,
+                        "title",
+                        "",
                         ),
-                ),
-        ]
-    bag = _bag_rows(equipment)
-
-    if bag:
-        content.append(
-                ui.h4("Bag")
+                "",
                 )
-        content.append(
-                ui.tags.table(
-                        {"class": "objects-table"},
-                        ui.tags.tbody(
-                                *bag,
-                                ),
-                        )
+        description = _practice_markdown(
+                practice
                 )
 
-    content.append(
-            ui.h4(
-                    (
-                        "Purse: "
-                        f"{safe_str(getattr(equipment, 'purse', '-'))} gp"
-                        )
+        if not title or not description:
+            continue
+
+        node = _feature_node(
+                title,
+                description,
+                )
+
+        if node is not None:
+            entries.append(
+                    node
+                    )
+
+    return entries
+
+
+def _tool_branch_data(
+        data: dict[str, Any],
+        ) -> dict | None:
+    """Tools and the Practices learned with them, under one branch."""
+    names = _tool_proficiency_names(
+            data
+            )
+    practices = _practice_entries_data(
+            data.get(
+                    "Practices",
+                    (),
                     )
             )
+    children: list[dict] = []
 
-    return sheet_branch(
-            "Equipment",
-            *content,
-            level=2,
+    if names:
+        children.append(
+                _entry(
+                    bullets=[
+                        para(
+                            name
+                            )
+                        for name in names
+                        ],
+                    )
+                )
+
+    if practices:
+        children.append(
+                _entry(
+                    "Practices",
+                    entries=practices,
+                    )
+                )
+
+    if not children:
+        return None
+
+    return _branch(
+            "Tool Proficiencies",
+            children,
             )
 
 
-def _prose_sections(
+def _feature_tree_data(
+        features: Any,
+        data: dict[str, Any],
+        ) -> dict[str, list[Any]]:
+    """The same tree _feature_tree builds, as data nodes instead of tags."""
+    tree: dict[str, list[Any]] = {
+            "species_description": [],
+            "species_features": [],
+            "species_versatile": [],
+            "background_description": [],
+            "background_hook": [],
+            "background_origin": [],
+            "class_description": [],
+            "class_layers": [],
+            "class_levels": [],
+            "class_invocations": [],
+            }
+
+    class_levels: list[tuple] = []
+
+    for order, current_feature in enumerate(
+            _ordered_features(
+                    features
+                    )
+            ):
+        source = _feature_source(
+                current_feature
+                )
+        section = _feature_place(
+                current_feature
+                )[ 0 ]
+
+        if section == _SECTION_SPECIES:
+            if _is_versatile_origin(
+                    current_feature
+                    ):
+                tree[ "species_versatile" ].extend(
+                        _versatile_origin_data(
+                                current_feature
+                                )
+                        )
+                continue
+            if _is_species_description(
+                    current_feature,
+                    data,
+                    ):
+                rendered = _description_data(
+                        current_feature
+                        )
+                bucket = "species_description"
+            else:
+                rendered = _feature_data(
+                        current_feature
+                        )
+                bucket = "species_features"
+        elif section == _SECTION_BACKGROUND:
+            if source.startswith(
+                    "Background Hook"
+                    ):
+                rendered = _feature_data(
+                        current_feature
+                        )
+                bucket = "background_hook"
+            elif source.startswith(
+                    (
+                        "Origin Feat",
+                        "Background Feat",
+                        )
+                    ):
+                rendered = _feature_data(
+                        current_feature
+                        )
+                bucket = "background_origin"
+            else:
+                rendered = _description_data(
+                        current_feature
+                        ) or _feature_data(
+                        current_feature
+                        )
+                bucket = "background_description"
+        else:
+            if source.startswith(
+                    "Guild"
+                    ):
+                _guild_layers_data(
+                        tree,
+                        current_feature,
+                        )
+                continue
+            elif (
+                    source.startswith(
+                            "Eldritch Invocation"
+                            )
+                    or source.startswith(
+                            "Invocation"
+                            )
+                    ):
+                rendered = _feature_data(
+                        current_feature
+                        )
+                bucket = "class_invocations"
+            else:
+                rendered = _feature_data(
+                        current_feature
+                        )
+                bucket = "class_levels"
+
+        if rendered is None:
+            continue
+
+        if bucket == "class_levels":
+            class_levels.append(
+                    (
+                        _feature_place(
+                                current_feature
+                                ),
+                        FEATURE_RANK,
+                        order,
+                        rendered,
+                        )
+                    )
+            continue
+
+        tree[ bucket ].append(
+                rendered
+                )
+
+    class_levels.extend(
+            _guild_build_data(
+                    data.get(
+                            "build"
+                            )
+                    )
+            )
+    class_levels.sort(
+            key=lambda item: item[ :3 ]
+            )
+    tree[ "class_levels" ] = [
+            item[ 3 ]
+            for item in class_levels
+            ]
+
+    return tree
+
+
+def _sections_data(
         data: dict[str, Any],
         raw_features: Any,
         spellcaster: Any,
-        ) -> list[Any]:
-    """Identity as a tree: Species, Background (with tools), Class, then Backstory."""
-    tree = _feature_tree(
+        ) -> list[dict]:
+    """Species, Background, Class, Equipment, Backstory — in that order."""
+    tree = _feature_tree_data(
             raw_features,
             data,
             )
@@ -1675,74 +1412,72 @@ def _prose_sections(
             "-",
             )
     class_children = _present(
-            _maybe_branch(
-                    f"{class_name} Description",
-                    tree[ "class_description" ],
-                    ),
+            _branch(
+                f"{class_name} Description",
+                tree[ "class_description" ],
+                ),
             *tree[ "class_layers" ],
-            _maybe_branch(
-                    "Level features",
-                    tree[ "class_levels" ],
-                    ),
-            _maybe_branch(
-                    "Invocations",
-                    tree[ "class_invocations" ],
-                    ),
+            _branch(
+                "Level features",
+                tree[ "class_levels" ],
+                ),
+            _branch(
+                "Invocations",
+                tree[ "class_invocations" ],
+                ),
             )
 
     if spellcaster is not None:
-        class_children.append(
-                sheet_branch(
-                        _spell_branch_title(
-                                data
-                                ),
-                        html_prose(
-                                spellbook_html(
-                                        spellcaster
-                                        )
-                                ),
-                        level=3,
-                        )
+        spellbook = spellbook_block(
+                spellcaster,
+                title=_spell_branch_title(
+                        data
+                        ),
                 )
 
-    sections: list[Any] = [
-            sheet_branch(
-                    species_name,
-                    *_present(
-                            *tree[ "species_description" ],
-                            *tree[ "species_versatile" ],
-                            *tree[ "species_features" ],
-                            ),
-                    level=2,
+        if spellbook is not None:
+            class_children.append(
+                    spellbook
+                    )
+
+    species_children = _present(
+            *tree[ "species_description" ],
+            *tree[ "species_versatile" ],
+            *tree[ "species_features" ],
+            )
+    background_children = _present(
+            _branch(
+                "Description",
+                tree[ "background_description" ],
+                ),
+            _branch(
+                "Hook",
+                tree[ "background_hook" ],
+                ),
+            _branch(
+                "Origin Feat",
+                tree[ "background_origin" ],
+                ),
+            _tool_branch_data(
+                data
+                ),
+            )
+
+    parts: list[tuple[str, list[dict]]] = [
+            (
+                species_name,
+                [_block(entries=species_children)] if species_children else [],
+                ),
+            (
+                background_name,
+                background_children,
+                ),
+            (
+                _class_identity(
+                    data
                     ),
-            sheet_branch(
-                    background_name,
-                    *_present(
-                            _maybe_branch(
-                                    "Description",
-                                    tree[ "background_description" ],
-                                    ),
-                            _maybe_branch(
-                                    "Hook",
-                                    tree[ "background_hook" ],
-                                    ),
-                            _maybe_branch(
-                                    "Origin Feat",
-                                    tree[ "background_origin" ],
-                                    ),
-                            _tool_proficiencies_branch(
-                                    data
-                                    ),
-                            ),
-                    level=2,
-                    ),
-            sheet_branch(
-                    _class_identity(
-                            data
-                            ),
-                    *class_children,
-                    level=2,
-                    ),
+                class_children,
+                ),
             ]
 
     equipment = data.get(
@@ -1750,95 +1485,859 @@ def _prose_sections(
             )
 
     if equipment is not None:
-        sections.append(
-                _equipment_section(
-                        equipment
-                        )
+        equipment_blocks = _equipment_blocks_data(
+                equipment
                 )
 
-    sections.append(
-            sheet_branch(
-                    "Backstory",
-                    ui.div(
-                            {"class": "narrative-prose"},
-                            prose(
-                                    data.get(
-                                            "Story",
-                                            "",
-                                            )
-                                    ),
-                            ),
-                    level=2,
+        if equipment_blocks:
+            parts.append(
+                    (
+                        "Equipment",
+                        equipment_blocks,
+                        )
                     )
+
+    story = _prose_node(
+            data.get(
+                    "Story",
+                    "",
+                    )
+            ) or _prose_node(
+            "—"
+            )
+    parts.append(
+            (
+                "Backstory",
+                [_block(entries=[story])] if story else [],
+                )
             )
 
-    return sections
+    return [
+        _section(
+            title,
+            blocks,
+            numeral=(
+                _ROMAN[ index ]
+                if index < len(
+                        _ROMAN
+                        )
+                else ""
+                ),
+            )
+        for index, (title, blocks) in enumerate(
+                parts
+                )
+        if blocks
+        ]
 
 
-def build_character_sheet(
+def _equipment_blocks_data(
+        equipment: Any,
+        ) -> list[dict]:
+    """What the Character wears, carries and keeps, in reading order."""
+    blocks: list[dict] = []
+    rows: list[dict] = []
+
+    for label, attribute in _EQUIPMENT_FIELDS:
+        item = getattr(
+                equipment,
+                attribute,
+                None,
+                )
+
+        if item is None:
+            continue
+
+        rows.append(
+                {
+                    "cells": [
+                        cell(
+                            label
+                            ),
+                        cell_runs(
+                            runs_of(
+                                safe_str(
+                                    item
+                                    )
+                                )
+                            ),
+                        ],
+                    }
+                )
+
+    # Jewelry is the one slot that holds several at once.
+    for worn in getattr(
+            equipment,
+            "jewelry",
+            [],
+            ) or []:
+        rows.append(
+                {
+                    "cells": [
+                        cell(
+                            "Jewelry"
+                            ),
+                        cell_runs(
+                            runs_of(
+                                safe_str(
+                                    worn
+                                    )
+                                )
+                            ),
+                        ],
+                    }
+                )
+
+    if rows:
+        blocks.append(
+                _block(
+                    "Equipment",
+                    tables=[
+                        {
+                            "rows": rows,
+                            },
+                        ],
+                    )
+                )
+
+    bag_rows = [
+        {
+            "cells": [
+                cell(
+                    safe_str(
+                        # `called` prefers an earned title
+                        # ("Club of Wounding") over the plain name.
+                        getattr(
+                                item,
+                                "called",
+                                None,
+                                )
+                        or getattr(
+                                item,
+                                "name",
+                                "item",
+                                )
+                        )
+                    ),
+                cell(
+                    f"x{safe_str(getattr(item, 'quantity', 1))}"
+                    ),
+                cell(
+                    f"{safe_str(getattr(item, 'weight', 0))} lbs"
+                    ),
+                cell(
+                    f"{safe_str(getattr(item, 'value', 0))} gp"
+                    ),
+                ],
+            }
+        for item in getattr(
+                equipment,
+                "bag",
+                [],
+                ) or []
+        ]
+    purse = para(
+            (
+                "Purse: "
+                f"{safe_str(getattr(equipment, 'purse', '-'))} gp"
+                )
+            )
+
+    if bag_rows:
+        blocks.append(
+                _block(
+                    "Bag",
+                    tables=[
+                        {
+                            "rows": bag_rows,
+                            },
+                        ],
+                    notes=[purse],
+                    )
+                )
+    elif purse:
+        blocks.append(
+                _block(
+                    notes=[purse],
+                    )
+                )
+
+    return blocks
+
+
+def _stat_chip_data(
         data: dict[str, Any],
-        ) -> ui.Tag:
-    """Build the complete character-sheet UI as a readable identity tree."""
-    stats = data.get("Stats") or {}
-    spellcaster = data.get("Spellcaster")
+        ) -> list[dict]:
+    """The rail's particulars: what a player checks before the fight."""
+    rows = [
+            (
+                "⚖️",
+                "Alignment",
+                data.get(
+                        "Alignment",
+                        "-",
+                        ),
+                ),
+            (
+                "👤",
+                "Creature Type",
+                _creature_type_label(
+                        data
+                        ),
+                ),
+            (
+                "⚧",
+                "Gender",
+                data.get(
+                        "Gender",
+                        "-",
+                        ),
+                ),
+            (
+                "🧑‍🧒",
+                "Size",
+                data.get(
+                        "size",
+                        "-",
+                        ),
+                ),
+            (
+                "👞",
+                "Speed",
+                data.get(
+                        "Speed",
+                        "-",
+                        ),
+                ),
+            (
+                "🏵️",
+                "Level",
+                data.get(
+                        "Level",
+                        "-",
+                        ),
+                ),
+            (
+                "⚜️",
+                "Proficiency Bonus",
+                f"+{safe_str(data.get('PB', '-'))}",
+                ),
+            (
+                # The number is the ceiling, not the current pool — say so, or
+                # a reader takes it for how much the Character has left.
+                "💚",
+                "Max Hit Points",
+                data.get(
+                        "Health",
+                        "-",
+                        ),
+                ),
+            (
+                "🖤",
+                "Hit Dice",
+                data.get(
+                        "HPD",
+                        "-",
+                        ),
+                ),
+            (
+                "🛡️",
+                "Armor Class",
+                data.get(
+                        "AC",
+                        "-",
+                        ),
+                ),
+            ]
+    chips = [
+        chip(
+            symbol,
+            label,
+            safe_str(
+                value
+                ),
+            kind="stat",
+            )
+        for symbol, label, value in rows
+        ]
+
+    for symbol, label, value in _iter_feature_chips(
+            data.get(
+                    "features"
+                    ),
+            data.get(
+                    "build"
+                    ),
+            ):
+        if _is_spellcasting_parameter_chip(
+                label
+                ):
+            continue
+
+        chips.append(
+                chip(
+                    symbol,
+                    label,
+                    safe_str(
+                        value
+                        ),
+                    kind="stat",
+                    )
+                )
+
+    return chips
+
+
+def _score_data(
+        stats: Any,
+        ) -> list[dict]:
+    """The six abilities as a roll: sigil, score, modifier, name."""
+    scores: list[dict] = []
+
+    for stat, value in (
+            stats or {}
+            ).items( ):
+        score = safe_int(
+                value,
+                10,
+                )
+        modifier = (
+            score - 10
+            ) // 2
+        glyph = Icon_Name(
+                _ABILITY_EMOJI.get(
+                        safe_str(
+                            stat
+                            ),
+                        "",
+                        )
+                )
+        scores.append(
+                {
+                    "glyph": glyph or "",
+                    "caption": safe_str(
+                            stat
+                            ),
+                    "value": safe_str(
+                            score
+                            ),
+                    "mod": f"{modifier:+d}",
+                    }
+                )
+
+    return scores
+
+
+def _skill_data(
+        data: dict[str, Any],
+        ) -> list[dict]:
+    """The skills table as rows: name, ability, bonus, and how trained."""
+    skills = data.get(
+            "Skills"
+            )
+
+    if not hasattr(
+            skills,
+            "list",
+            ):
+        return []
+
+    rows: list[dict] = []
+
+    try:
+        for skill, label in skills.list:
+            ability = re.search(
+                    r"\(([A-Z]{3})\)",
+                    safe_str(
+                            label
+                            ),
+                    )
+            level = safe_int(
+                    getattr(
+                            skill,
+                            "proficiency_level",
+                            0,
+                            ),
+                    0,
+                    )
+            rows.append(
+                    {
+                        "name": safe_str(
+                            getattr(
+                                    skill,
+                                    "name",
+                                    label,
+                                    )
+                            ),
+                        "attr": (
+                            ability.group(
+                                1
+                                )
+                            if ability
+                            else ""
+                            ),
+                        "bonus": _signed(
+                            skill.calculate_modifier( )
+                            if hasattr(
+                                    skill,
+                                    "calculate_modifier",
+                                    )
+                            else 0
+                            ),
+                        "prof": level >= 1,
+                        "expert": level >= 2,
+                        }
+                    )
+    except Exception:
+        return []
+
+    return rows
+
+
+def _save_data(
+        data: dict[str, Any],
+        ) -> list[dict]:
+    """The six saving throws as rows, with the trained ones marked."""
+    saving_throws = data.get(
+            "SavingThrow"
+            )
+
+    if saving_throws is None:
+        return []
+
+    trained = getattr(
+            saving_throws,
+            "proficiency",
+            {},
+            ) or {}
+    rows: list[dict] = []
+
+    for abbreviation in _ABILITY_ORDER:
+        value = getattr(
+                saving_throws,
+                abbreviation,
+                None,
+                )
+
+        if value is None:
+            continue
+
+        rows.append(
+                {
+                    "name": ABILITY_NAMES.get(
+                            abbreviation,
+                            abbreviation,
+                            ),
+                    "bonus": _signed(
+                            value
+                            ),
+                    "prof": bool(
+                        trained.get(
+                                abbreviation,
+                                False,
+                                )
+                        ),
+                    "expert": False,
+                    }
+                )
+
+    return rows
+
+
+def _attack_data(
+        data: dict[str, Any],
+        ) -> list[dict]:
+    """Attack rolls as rows: the ability, what it adds, the total."""
+    attack_rolls = data.get(
+            "AttackRolls"
+            )
+
+    if attack_rolls is None:
+        return []
+
+    rows: list[dict] = []
+
+    for abbreviation in getattr(
+            attack_rolls,
+            "ABILITIES",
+            _ABILITY_ORDER,
+            ):
+        base = getattr(
+                attack_rolls,
+                f"{abbreviation}_base",
+                None,
+                )
+        proficient = getattr(
+                attack_rolls,
+                f"{abbreviation}_prof",
+                None,
+                )
+
+        if base is None or proficient is None:
+            continue
+
+        rows.append(
+                {
+                    "name": abbreviation,
+                    "base": _signed(
+                            base
+                            ),
+                    "prof": _signed(
+                            proficient
+                            ),
+                    }
+                )
+
+    return rows
+
+
+def _language_names(
+        languages: Any,
+        ) -> list[str]:
+    """Languages as plain names, however the model spells them."""
+    if languages is None:
+        return []
+
+    langs = getattr(
+            languages,
+            "langs",
+            None,
+            )
+
+    if langs:
+        return [
+            safe_str(
+                name
+                )
+            for name in sorted(
+                    langs
+                    )
+            ]
+
+    body = (
+        languages.AsListHTML( )
+        if hasattr(
+                languages,
+                "AsListHTML",
+                )
+        else safe_str(
+                languages,
+                "",
+                )
+        )
+    names = [
+        line.strip( )
+        for line in re.split(
+                r"<br\s*/?>|,",
+                re.sub(
+                        r"<[^>]+>",
+                        "",
+                        safe_str(
+                                body,
+                                "",
+                                ),
+                        ),
+                )
+        if line.strip( )
+        ]
+
+    return names
+
+
+def _list_data(
+        data: dict[str, Any],
+        ) -> list[dict]:
+    """Proficiencies, Tools and Languages as titled lists in the rail."""
+    groups = [
+            (
+                "Proficiencies",
+                _combat_proficiency_names(
+                    data
+                    ),
+                ),
+            (
+                "Tools",
+                _tool_proficiency_names(
+                    data
+                    ),
+                ),
+            (
+                "Languages",
+                _language_names(
+                    data.get(
+                            "Languages"
+                            )
+                    ),
+                ),
+            ]
+
+    return [
+        {
+            "title": title,
+            "items": [
+                {
+                    "body": safe_str(
+                        name
+                        ),
+                    }
+                for name in names
+                ],
+            }
+        for title, names in groups
+        if names
+        ]
+
+
+def _decorate(
+        node: dict,
+        ) -> None:
+    """Ship the bools slab's `when` reads, beside what they guard.
+
+    `when` takes a name and only understands bools, so an entry that has a
+    name says so (`has_name`), a block that has a heading says so
+    (`has_heading`). Decorating once, from the built tree, means no builder
+    can forget one and leave a heading unpainted — or paint an empty line.
+    """
+    if "numeral" in node:
+        node[ "has_numeral" ] = bool(
+                safe_str(
+                    node.get(
+                            "numeral",
+                            "",
+                            ),
+                    "",
+                    )
+                )
+
+    if "heading" in node:
+        node[ "has_heading" ] = bool(
+                safe_str(
+                    node.get(
+                            "heading",
+                            "",
+                            ),
+                    "",
+                    ).strip( )
+                )
+
+    #-- Every list a slab `when` guards ships its own emptiness flag, so a
+    #-- mixed block/entry still reads top-down: slab paints unconditional
+    #-- children before conditional ones.
+    for key, flag in (
+            ( "flavor", "has_flavor" ),
+            ( "paras", "has_paras" ),
+            ( "bullets", "has_bullets" ),
+            ( "tables", "has_tables" ),
+            ( "notes", "has_notes" ),
+            ( "entries", "has_children" ),
+            ):
+        if key in node:
+            node[ flag ] = bool(
+                    node.get(
+                        key,
+                        (),
+                        )
+                    )
+
+    if "blocks" in node:
+        #-- A section: its title rides the rubric row beside the numeral.
+        node[ "show_title" ] = True
+
+    if "name" in node:
+        node[ "has_name" ] = bool(
+                safe_str(
+                    node.get(
+                            "name",
+                            "",
+                            ),
+                    "",
+                    ).strip( )
+                )
+        node[ "has_sub" ] = bool(
+                safe_str(
+                    node.get(
+                            "sub",
+                            "",
+                            ),
+                    "",
+                    ).strip( )
+                )
+
+    for child in node.get(
+            "entries",
+            (),
+            ):
+        _decorate(
+            child
+            )
+
+    for child in node.get(
+            "blocks",
+            (),
+            ):
+        _decorate(
+            child
+            )
+
+
+def character_sheet_data(
+        data: dict[str, Any],
+        ) -> dict:
+    """The whole sheet as the JSON <gl-sheetbody> reads.
+
+    Every key here is a param the slab document declares; a key that is not
+    declared is a field no one paints, and a key missing is a blank a reader
+    would see.
+    """
+    stats = data.get(
+            "Stats"
+            ) or {}
+    spellcaster = data.get(
+            "Spellcaster"
+            )
     raw_features = data.get(
             "features",
             [],
             )
-
-    return ui.div(
-            {"class": "sheet note-lines"},
-            ui.div(
-                    {"class": "npc-header"},
-                    ui.h2(
-                            {"class": "character-name"},
-                            safe_str(
-                                    data.get(
-                                            "name",
-                                            "Unknown",
-                                            ),
-                                    "Unknown",
-                                    ),
-                            ),
-                    ui.h2(
-                            {"class": "character-title"},
-                            safe_str(
-                                    data.get(
-                                            "title",
-                                            "",
-                                            ),
-                                    "",
-                                    ),
-                            ),
-                    ),
-            ui.div(
-                    {"class": "sheet-body"},
-                    ui.div(
-                            {"class": "sheet-rail"},
-                            ui.div(
-                                    {"class": "stat-flow"},
-                                    *_character_stat_chips(data),
-                                    ),
-                            *_rail_items(
-                                    data,
-                                    stats,
-                                    spellcaster,
-                                    ),
-                            ),
-                    ui.div(
-                            {"class": "sheet-main"},
-                            *_prose_sections(
-                                    data,
-                                    raw_features,
-                                    spellcaster,
-                                    ),
-                            ),
-                    ),
+    chips = _stat_chip_data(
+            data
             )
+    scores = _score_data(
+            stats
+            )
+    skills = _skill_data(
+            data
+            )
+    saves = _save_data(
+            data
+            )
+    attacks = _attack_data(
+            data
+            )
+    lists = _list_data(
+            data
+            )
+    magic = (
+        spellcasting_chip_data(
+                spellcaster
+                )
+        if spellcaster is not None
+        else []
+        )
+    slots = (
+        spell_slots_data(
+                spellcaster
+                )
+        if spellcaster is not None
+        else None
+        )
+    spells = (
+        known_spells_groups(
+                spellcaster
+                )
+        if spellcaster is not None
+        else []
+        )
+    sections = _sections_data(
+            data,
+            raw_features,
+            spellcaster,
+            )
+
+    for section in sections:
+        _decorate(
+            section
+            )
+    title = safe_str(
+            data.get(
+                    "title",
+                    "",
+                    ),
+            "",
+            )
+
+    return {
+            "name": safe_str(
+                    data.get(
+                            "name",
+                            "-",
+                            ),
+                    "-",
+                    ),
+            "has_name": bool(
+                    safe_str(
+                        data.get(
+                            "name",
+                            "-",
+                            ),
+                        "-",
+                        ).strip( )
+                    ),
+            "title": title,
+            "has_title": bool(
+                    title.strip( )
+                    ),
+            "show_seal": True,
+            "has_chips": bool(
+                    chips
+                    ),
+            "has_scores": bool(
+                    scores
+                    ),
+            "has_skills": bool(
+                    skills
+                    ),
+            "has_saves": bool(
+                    saves
+                    ),
+            "has_attacks": bool(
+                    attacks
+                    ),
+            "has_lists": bool(
+                    lists
+                    ),
+            "has_magic": bool(
+                    magic
+                    ),
+            "has_slots": slots is not None,
+            "has_spells": bool(
+                    spells
+                    ),
+            "chips": chips,
+            "scores": scores,
+            "skills": skills,
+            "passive": (
+                "Passive Perception: "
+                f"{safe_str(data.get('passive_perception', '-'))}"
+                ),
+            "saves": saves,
+            "attacks": attacks,
+            "lists": lists,
+            "magic": magic,
+            "slots": (
+                [
+                    slots[ "table" ],
+                    ]
+                if slots
+                else []
+                ),
+            "slots_title": (
+                slots[ "title" ]
+                if slots
+                else "SPELL SLOTS"
+                ),
+            "slot_notes": (
+                slots[ "notes" ]
+                if slots
+                else []
+                ),
+            "spells": spells,
+            "sections": sections,
+            }
 
 
 __all__ = [
-    "build_character_sheet",
+    "character_sheet_data",
     ]
 
 
@@ -1893,25 +2392,19 @@ def _test_generated_practices() -> None:
                 )
         assert len( matches ) == 1, background
 
-        sheet = str(
-                build_character_sheet(
+        payload = json.dumps(
+                character_sheet_data(
                         data
-                        )
+                        ),
+                ensure_ascii = False,
                 )
-        assert sheet.count( title ) == 1, background
-        assert f"<em>{flavour}" in sheet, background
-        assert f"<strong>{heading}</strong>" in sheet, background
-        assert sheet.index( "Practices" ) < sheet.index( "Equipment" )
+        assert payload.count( title ) == 1, background
+        assert flavour in payload, background
+        assert heading in payload, background
+        assert payload.index( "Practices" ) < payload.index( "Equipment" )
 
 
 def _self_test() -> None:
-    class ExampleFeature:
-        name = "Example"
-        description = "A story with no rule."
-        chips = ()
-        source = "Example"
-        level = 0
-
     assert _species_identity(
             {
                 "Species": "Elf",
@@ -1956,44 +2449,6 @@ def _self_test() -> None:
                     ),
             ]
 
-    narrative = ExampleFeature()
-    narrative.narrative = True
-    narrative_html = str(
-            _render_feature(
-                    narrative
-                    )
-            )
-    assert "feature-entry is-narrative" in narrative_html
-
-    rule = ExampleFeature()
-    rule.narrative = False
-    rule_html = str(
-            _render_feature(
-                    rule
-                    )
-            )
-    assert "feature-entry is-narrative" not in rule_html
-
-    practice_html = str(
-            _practice_entries(
-                    (
-                            {
-                                "title": "Disguise Kit Proficiency",
-                                "flavour": "Most doors are guarded by expectations.",
-                                "sections": (
-                                        {
-                                            "title": "Play the Part",
-                                            "guidance": "You can create a disguise.",
-                                            },
-                                        ),
-                                },
-                            )
-                    )[ 0 ]
-            )
-    assert "Disguise Kit Proficiency" in practice_html
-    assert "<em>Most doors are guarded by expectations.</em>" in practice_html
-    assert "<strong>Play the Part.</strong>" in practice_html
-
     _test_generated_practices()
     _test_sheet_tree()
 
@@ -2016,10 +2471,12 @@ def _test_sheet_tree() -> None:
                 )
         data = character.to_dict()
 
-    sheet = str(
-            build_character_sheet(
-                    data
-                    )
+    sheet_data = character_sheet_data(
+            data
+            )
+    payload = json.dumps(
+            sheet_data,
+            ensure_ascii = False,
             )
     species = _species_identity(
             data
@@ -2042,38 +2499,28 @@ def _test_sheet_tree() -> None:
             data
             )
 
-    assert species in sheet
-    assert background in sheet
-    assert "Level features" in sheet
-    assert guild in sheet
-    assert "Tool Proficiencies" in sheet
+    assert species in payload
+    assert background in payload
+    assert "Level features" in payload
+    assert guild in payload
+    assert "Tool Proficiencies" in payload
     assert tools, "seed 42 should grant a tool"
-    assert tools[ 0 ] in sheet
-    assert sheet.count(
-            "<h2>Languages</h2>"
-            ) == 1
-    assert sheet.count(
-            "npc-textbox"
-            ) >= 1
-    assert 'class="npc-textbox"' not in _language_body(
-            data.get(
-                    "Languages"
-                    )
-            )
-    assert sheet.index(
+    assert tools[ 0 ] in payload
+    list_titles = [
+            group[ "title" ]
+            for group in sheet_data[ "lists" ]
+            ]
+    assert list_titles.count( "Languages" ) == 1
+    assert list_titles.index( "Tools" ) < list_titles.index( "Languages" )
+    assert payload.index(
             background
-            ) < sheet.index(
+            ) < payload.index(
             "Tool Proficiencies"
             )
-    assert sheet.index(
+    assert payload.index(
             "Tool Proficiencies"
-            ) < sheet.index(
+            ) < payload.index(
             "Level features"
-            )
-    assert sheet.index(
-            ">Tools<"
-            ) < sheet.index(
-            ">Languages<"
             )
 
     rail_tools = _combat_proficiency_names(
@@ -2083,7 +2530,7 @@ def _test_sheet_tree() -> None:
     assert tools[ 0 ] in _tool_proficiency_names(
             data
             )
-    assert "Extra Origin Feat" not in sheet
+    assert "Extra Origin Feat" not in payload
 
     with redirect_stdout(
             StringIO()
@@ -2097,16 +2544,17 @@ def _test_sheet_tree() -> None:
                 )
         warlock_data = warlock.to_dict()
 
-    warlock_sheet = str(
-            build_character_sheet(
+    warlock_payload = json.dumps(
+            character_sheet_data(
                     warlock_data
-                    )
+                    ),
+            ensure_ascii = False,
             )
-    assert "Invocations" in warlock_sheet or "Pact Spells" in warlock_sheet
-    assert "Pact Spells" in warlock_sheet
-    assert warlock_sheet.index(
+    assert "Invocations" in warlock_payload or "Pact Spells" in warlock_payload
+    assert "Pact Spells" in warlock_payload
+    assert warlock_payload.index(
             "Pact Spells"
-            ) < warlock_sheet.index(
+            ) < warlock_payload.index(
             "Backstory"
             )
 
@@ -2123,21 +2571,22 @@ def _test_sheet_tree() -> None:
                 )
         wild_data = barbarian.to_dict()
 
-    wild_sheet = str(
-            build_character_sheet(
+    wild_payload = json.dumps(
+            character_sheet_data(
                     wild_data
-                    )
+                    ),
+            ensure_ascii = False,
             )
-    assert "Path of the Wild Heart" in wild_sheet
-    assert "harmony, and harmony" not in wild_sheet
-    assert wild_sheet.index(
+    assert "Path of the Wild Heart" in wild_payload
+    assert "harmony, and harmony" not in wild_payload
+    assert wild_payload.index(
             "Barbarian Description"
-            ) < wild_sheet.index(
+            ) < wild_payload.index(
             "Path of the Wild Heart"
             )
-    assert wild_sheet.index(
+    assert wild_payload.index(
             "Path of the Wild Heart"
-            ) < wild_sheet.index(
+            ) < wild_payload.index(
             "Level features"
             )
 
@@ -2153,10 +2602,11 @@ def _test_sheet_tree() -> None:
                 )
         human_data = human.to_dict()
 
-    human_sheet = str(
-            build_character_sheet(
+    human_payload = json.dumps(
+            character_sheet_data(
                     human_data
-                    )
+                    ),
+            ensure_ascii = False,
             )
     extra = next(
             getattr(
@@ -2196,18 +2646,18 @@ def _test_sheet_tree() -> None:
                     "",
                     ) == "Origin Feat"
             )
-    assert "Humans have complex lives, and they adapt quickly." in human_sheet
-    assert "You have this extra Origin Feat:" in human_sheet
-    assert extra in human_sheet
-    assert "Extra Origin Feat" not in human_sheet
-    assert human_sheet.index(
+    assert "Humans have complex lives, and they adapt quickly." in human_payload
+    assert "You have this extra Origin Feat:" in human_payload
+    assert extra in human_payload
+    assert "Extra Origin Feat" not in human_payload
+    assert human_payload.index(
             extra
-            ) < human_sheet.index(
-            ">Farmer<"
+            ) < human_payload.index(
+            "Farmer"
             )
-    assert human_sheet.index(
-            ">Farmer<"
-            ) < human_sheet.index(
+    assert human_payload.index(
+            "Farmer"
+            ) < human_payload.index(
             background_feat
             )
 

@@ -40,6 +40,8 @@ import html as html_text
 import json
 import re
 
+from html.parser import HTMLParser
+
 from markdown_it import MarkdownIt
 
 from AtlasVenustas.Compass_of_Features import Chip
@@ -361,8 +363,9 @@ def Chip_As_Html(
 				chip.kind
 				)
 		style = f"{style} {kind}-chip"
-	symbol = Escaped(
-			chip.symbol
+	symbol = (
+			Icon_Html( chip.symbol )
+			or Escaped( chip.symbol )
 			)
 	label = Escaped(
 			chip.label
@@ -380,6 +383,292 @@ def Chip_As_Html(
 			f'<div class="value">{value}</div>'
 			"</div>"
 			)
+
+
+# Colour emoji the sheet draws as self-hosted line-art SVGs so the
+# parchment reads as ink instead of colour: game-icons.net, CC BY 3.0
+# (attribution in README). Symbols outside this table keep their
+# current text rendering — monochrome glyphs (✦, ⚧) already read as
+# ink, and the parked NPC sheet keeps its emoji until it un-parks.
+EMOJI_ICONS = {
+		"🦾": "muscle-fat",
+		"🥢": "acrobatic",
+		"🫀": "heart-beats",
+		"🧩": "puzzle",
+		"🦉": "barn-owl",
+		"🎭": "carnival-mask",
+		"⚖️": "scales",
+		"👤": "person",
+		"🧑‍🧒": "expand",
+		"👞": "boot-prints",
+		"🏵️": "star-flag",
+		"⚜️": "laurels",
+		"💚": "heart-plus",
+		"🖤": "dice-six-faces-five",
+		"🛡️": "shield",
+		"🔥": "flame",
+		"⚙️": "gears",
+		"⚔️": "crossed-swords",
+		"❤️‍🔥": "heart-shield",
+		"💨": "dust-cloud",
+		"🌑": "moon",
+		"💢": "enrage",
+		"🪄": "fairy-wand",
+		"🔮": "crystal-ball",
+		#-- The spell rail: every chip that used to carry an emoji now
+		#-- carries a sigil, all of them from the same ink.
+		"✨": "spell-book",
+		"🪬": "star-swirl",
+		"💜": "chained-heart",
+		"☯": "vortex",
+		"🌀": "fog",
+		"🀄": "old-king",
+		}
+
+
+def Icon_Name(
+		symbol: str | None,
+		) -> str | None:
+	"""The declared icon a known emoji stands for; None keeps the text."""
+	return EMOJI_ICONS.get(
+			symbol or ""
+			)
+
+
+def Icon_Html(
+		symbol: str | None,
+		) -> str | None:
+	"""The <img> for a known emoji symbol; None when the caller keeps text."""
+	name = Icon_Name( symbol )
+	if not name:
+		return None
+	return f'<img class="icon" src="/static/icons/{name}.svg" alt="">'
+
+
+# ---------------------------------------------------------------------------
+# Prose as slab runs
+# ---------------------------------------------------------------------------
+
+
+def Run(
+		text: str,
+		*,
+		bold: bool = False,
+		italic: bool = False,
+		) -> dict:
+	"""One run of prose as the parser reads it back.
+
+	``content``/``bold`` is the shape the sheet body consumes; ``italic``
+	rides along only so a caller can tell a flavour paragraph (all of it
+	italic) from a rules one, and is dropped when the run is emitted.
+	"""
+	return {
+			"content": text,
+			"bold": bold,
+			"italic": italic,
+			}
+
+
+def _Emitted(
+		runs: list[dict],
+		) -> list[dict]:
+	"""Runs as the sheet body reads them: content and weight, nothing else."""
+	return [
+			{
+				"content": run[ "content" ],
+				"bold": run[ "bold" ],
+				}
+			for run in runs
+			]
+
+
+def _Runs_Speak(
+		runs: list[dict],
+		) -> bool:
+	"""True when a run list carries something a reader would see."""
+	return any(
+			run[ "content" ].strip( )
+			for run in runs
+			)
+
+
+#-- The tags that end a run of prose: a paragraph, any heading, and the
+#-- div the block printer wraps a multi-block body in.  ``br`` is not one
+#-- of them: a break splits the line, not the paragraph.
+_BLOCK_TAGS = frozenset(
+		(
+				"p",
+				"h1",
+				"h2",
+				"h3",
+				"h4",
+				"h5",
+				"h6",
+				"div",
+				)
+		)
+
+
+class _Prose_Runs( HTMLParser ):
+	"""The trusted HTML a rules body prints as, read back as run blocks.
+
+	Only the tags the printers above emit are understood: ``p``, ``br``,
+	``b``/``strong``, ``i``/``em``, ``ul``/``ol``/``li`` and the headings.
+	Anything else contributes its text unstyled — losing a wrapper is
+	better than losing a sentence.
+	"""
+
+	def __init__(
+			self,
+			) -> None:
+		super().__init__(
+				convert_charrefs=True,
+				)
+		self.blocks: list[dict] = []
+		self.current: list[dict] = []
+		#-- Nesting depth of the two emphasis flags: a run keeps whatever
+		#-- was open at the moment its text arrived.
+		self.bold_depth = 0
+		self.italic_depth = 0
+		self.list_items: list[dict] | None = None
+
+	def _flush(
+			self,
+			) -> None:
+		runs = self.current
+		self.current = []
+		if not _Runs_Speak( runs ):
+			return
+		if self.list_items is None:
+			self.blocks.append(
+					{
+						"kind": "para",
+						#-- A paragraph is flavour — the italic line under a
+						#-- feature's name — only when every word of it is
+						#-- italic.  slab 0.1.0 paints italic only whole.
+						"italic": all(
+								run[ "italic" ]
+								for run in runs
+								),
+						"runs": _Emitted( runs ),
+						}
+					)
+			return
+		self.list_items.append(
+				_Emitted( runs )
+				)
+
+
+	def handle_starttag(
+			self,
+			tag: str,
+			attrs: list[tuple[str, str | None]],
+			) -> None:
+		if tag in (
+				"b",
+				"strong",
+				):
+			self.bold_depth += 1
+		elif tag in (
+				"i",
+				"em",
+				):
+			self.italic_depth += 1
+		elif tag == "br":
+			self._emit( "\n" )
+		elif tag in _BLOCK_TAGS:
+			self._flush( )
+		elif tag == "li":
+			self._flush( )
+		elif tag in (
+				"ul",
+				"ol",
+				):
+			self.list_items = []
+
+	def handle_endtag(
+			self,
+			tag: str,
+			) -> None:
+		if tag in (
+				"b",
+				"strong",
+				):
+			self.bold_depth = max( 0, self.bold_depth - 1 )
+		elif tag in (
+				"i",
+				"em",
+				):
+			self.italic_depth = max( 0, self.italic_depth - 1 )
+		elif tag in _BLOCK_TAGS:
+			self._flush( )
+		elif tag in (
+				"ul",
+				"ol",
+				):
+			self._flush( )
+			if self.list_items:
+				self.blocks.append(
+						{
+							"kind": "list",
+							"items": self.list_items,
+							}
+						)
+			self.list_items = None
+
+	def handle_data(
+			self,
+			data: str,
+			) -> None:
+		self._emit( data )
+
+	def _emit(
+			self,
+			text: str,
+			) -> None:
+		if not text:
+			return
+		self.current.append(
+				Run(
+						text,
+						bold=self.bold_depth > 0,
+						italic=self.italic_depth > 0,
+						)
+				)
+
+
+def Prose_Blocks(
+		html: str,
+		) -> list[dict]:
+	"""
+	Trusted HTML prose as blocks: paragraphs and lists, in order.
+
+	This is the same text :func:`Rules_As_Html` writes, read back as data
+	instead of markup: ``{"kind": "para", "runs": [...]}`` per paragraph,
+	``{"kind": "list", "items": [runs, ...]}`` per list.  Emphasis survives
+	as ``weight``/``italic`` on the run that carried it.
+	"""
+	reader = _Prose_Runs( )
+	reader.feed(
+			html or ""
+			)
+	reader.close( )
+	reader._flush( )
+	return reader.blocks
+
+
+def Prose_Runs(
+		html: str,
+		) -> list[dict]:
+	"""Every paragraph and list item of trusted HTML prose, flattened."""
+	runs: list[dict] = []
+	for block in Prose_Blocks( html ):
+		if block[ "kind" ] == "list":
+			for item in block[ "items" ]:
+				runs.extend( item )
+		else:
+			runs.extend( block[ "runs" ] )
+	return runs
 
 
 def Chip_As_Markdown(
@@ -444,6 +733,9 @@ __all__ = (
 		"Entry_As_Markdown",
 		"Entry_As_Plain",
 		"MEDIA",
+		"Prose_Blocks",
+		"Prose_Runs",
+		"Run",
 		"Rules_As_Html",
 		"Print_Chip",
 		"Print_Entry",
@@ -458,6 +750,8 @@ __all__ = (
 def _self_test() -> None:
 	from AtlasVenustas.Compass_of_Features import Section
 	from AtlasVenustas.Charts_of_Printing import Unknown_Medium
+	from AtlasVenustas.Charts_of_Printing import Prose_Blocks
+	from AtlasVenustas.Charts_of_Printing import Prose_Runs
 		#-- By package path: run as ``python -m``, this file is also
 		#-- ``__main__``, and the printers raise the package's class.
 
@@ -598,6 +892,79 @@ def _self_test() -> None:
 		assert "pdf" in str( error )
 	else:
 		raise AssertionError( "an unknown medium printed" )
+
+	#-- The same body, read back as runs for the sheet: emphasis travels on
+	#-- the run, paragraphs and list items stay separate blocks, and the
+	#-- text a reader sees never changes.
+	assert Prose_Blocks(
+			"<p>Keen <b>Smell</b>:</p><p>Nose to the wind.</p>"
+			) == [
+					{
+						"kind": "para",
+						"italic": False,
+						"runs": [
+								{"content": "Keen ", "bold": False},
+								{"content": "Smell", "bold": True},
+								{"content": ":", "bold": False},
+								],
+						},
+					{
+						"kind": "para",
+						"italic": False,
+						"runs": [
+								{"content": "Nose to the wind.", "bold": False},
+								],
+						},
+					], "two paragraphs split on the tag, not on the sentence"
+
+	#-- A paragraph written entirely in <em> is the flavour line, and the
+	#-- sheet body paints it as one.
+	assert Prose_Blocks(
+			"<p><em>Ride the wind.</em></p>"
+			) == [
+					{
+						"kind": "para",
+						"italic": True,
+						"runs": [
+								{"content": "Ride the wind.", "bold": False},
+								],
+						},
+					], "an all-italic paragraph is flavour"
+	assert Prose_Blocks(
+			"<p><em>Ride</em> and <b>fall</b>.</p>"
+			)[0]["italic"] is False, "mixed emphasis keeps its words, drops the italics"
+
+	assert Prose_Blocks(
+			'<div class="entry-rules"><p>Take a slot:</p>'
+			"<ul><li><em>2d8</em> force</li><li>1d8 more</li></ul></div>"
+			) == [
+					{
+						"kind": "para",
+						"italic": False,
+						"runs": [
+								{"content": "Take a slot:", "bold": False},
+								],
+						},
+					{
+						"kind": "list",
+						"items": [
+								[
+										{"content": "2d8", "bold": False},
+										{"content": " force", "bold": False},
+										],
+								[
+										{"content": "1d8 more", "bold": False},
+										],
+								],
+						},
+					], "a bullet list keeps its items"
+	assert Prose_Runs( "" ) == [], "no prose, no runs"
+	assert [ run[ "content" ] for run in Prose_Runs(
+			"<p>One</p><ul><li>Two</li></ul>"
+			) ] == [
+					"One",
+					"Two",
+					], "flattening keeps the reading order"
 
 	print( "Charts_of_Printing: all checks passed." )
 

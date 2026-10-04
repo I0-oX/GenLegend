@@ -18,7 +18,6 @@ Run:
 from __future__ import annotations
 
 import asyncio
-import html as html_module
 import json
 import sys
 from pathlib import Path
@@ -225,13 +224,10 @@ async def main() -> None:
             "name",
             None,
             )
+    sheet_text = json.dumps(first["sheet_data"], ensure_ascii=False)
     check(
-            name
-            and (
-                name in first["sheet_html"]
-                or html_module.escape(name) in first["sheet_html"]
-                ),
-            "sheet_html carries the engine's seeded name",
+            name and name in sheet_text,
+            "sheet_data carries the engine's seeded name",
             )
     check(
             first["hash"].startswith(
@@ -249,7 +245,7 @@ async def main() -> None:
     second = json_body(payload)
     check(
             second["ok"] is True
-            and second["sheet_html"] == first["sheet_html"]
+            and second["sheet_data"] == first["sheet_data"]
             and second["hash"] == first["hash"],
             "same seed replays byte-for-byte",
             )

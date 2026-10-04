@@ -2,9 +2,9 @@
 // level stepper, generate, share) and the failure card. Compiled with
 // @stencil-hq/slab@0.1.0 → app/static/slab/sheet.* (`make slab`); mounted by
 // app/static/js/app.js, which answers every signal against
-// POST /api/character/generate. The generated sheet HTML goes in the
-// #character_result div that follows <gl-sheet> in index.html (slab 0.1.0
-// cannot project host children).
+// POST /api/character/generate. The generated sheet body renders in the
+// <gl-sheetbody> that follows <gl-sheet> in index.html, fed with the
+// response's sheet_data (slab 0.1.0 cannot project host children).
 //
 // Signals: open_species / open_background / open_class / open_specialization
 // toggle one dropdown (the bridge swaps param.field_options to match),

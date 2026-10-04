@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Player sweep: summon, project, render; group every crash by signature.
+"""Player sweep: summon, project, render the sheet; group every crash by signature.
 
 Quick (default): every Guild at levels 1 and 5, three seeds, summon only (about 30 s).
 Wide (--wide): every level 1..20, every Species, Background and Specialization,
@@ -7,8 +7,8 @@ three genders, each summoned, projected and rendered (about nine minutes).
 
 Covers what the 78-cell gate does not: every level 1..20, every Species,
 every Background, every Specialization, three genders. Each request runs
-the same three steps the Shiny page runs: summon_player -> to_dict ->
-build_character_sheet. A failure at any step is a user-visible crash.
+the same three steps the page runs: summon_player -> to_dict ->
+character_sheet_data. A failure at any step is a user-visible crash.
 
 Usage: make sweep-player [WIDE=1]   or   python scripts/sweep_player.py [--wide] [out.jsonl]
 """
@@ -39,7 +39,7 @@ quiet = lambda: (contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_
 with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
     from AtlasActorLudi.Map_of_Character_Generation import choices, summon_player
     from AtlasLusoris.GuildKit import Specialization_Choices
-    from app.components import build_character_sheet
+    from app.components import character_sheet_data
 
 ch = choices()
 GUILDS = list(ch.guilds)
@@ -87,9 +87,9 @@ def run(request: dict) -> dict:
         return {**rec, "stage": "to_dict", "type": type(e).__name__, "msg": str(e)[:160], "where": innermost_repo_frame(tb)}
     try:
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-            html = str(build_character_sheet(data))
-        if len(html) < 500:
-            return {**rec, "stage": "render", "type": "EmptySheet", "msg": f"sheet html only {len(html)} chars", "where": "app/components/character_sheet.py"}
+            sheet = json.dumps(character_sheet_data(data), ensure_ascii=False)
+        if len(sheet) < 500:
+            return {**rec, "stage": "render", "type": "EmptySheet", "msg": f"sheet data only {len(sheet)} chars", "where": "app/components/character_sheet.py"}
     except Exception as e:
         tb = traceback.format_exc()
         return {**rec, "stage": "render", "type": type(e).__name__, "msg": str(e)[:160], "where": innermost_repo_frame(tb)}

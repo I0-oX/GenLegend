@@ -38,6 +38,7 @@ $(UVICORN):
 
 smoke-player: setup
 	$(VENV_PYTHON) -c "import app.main; from AtlasActorLudi.Map_of_Character_Generation import summon_player; p = summon_player(seed=42, level=1); print('smoke-player OK', getattr(p, 'name', p))"
+	$(VENV_PYTHON) -c "import json; from AtlasActorLudi.Map_of_Character_Generation import summon_player; from app.components import character_sheet_data; p = summon_player(seed=42, level=1); data = character_sheet_data(p.to_dict()); json.dumps(data, ensure_ascii=False); print('sheet_data OK', len(data), 'top keys')"
 	$(VENV_PYTHON) -m AtlasVenustas.Charts_of_Printing
 	$(VENV_PYTHON) -m AtlasActorLudi.Charts_of_Build
 
@@ -76,7 +77,7 @@ loss-check:
 SLAB_VERSION := 0.1.0
 SLAB := bunx @stencil-hq/slab@$(SLAB_VERSION)
 SLAB_OUT := app/static/slab
-SLAB_DOCS := app/slab/shell.slab app/slab/footer.slab app/slab/forge.slab app/slab/sheet.slab app/slab/parchment.slab
+SLAB_DOCS := app/slab/shell.slab app/slab/footer.slab app/slab/forge.slab app/slab/sheet.slab app/slab/parchment.slab app/slab/sheetbody.slab
 
 slab:
 	@for doc in $(SLAB_DOCS); do $(SLAB) check $$doc || exit 1; done

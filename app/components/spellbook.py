@@ -11,17 +11,10 @@ from shiny import ui
 from AtlasVenustas import Chip, ornament_for
 
 from app.components.shared import safe_str
-
-
-# The sheet spells abilities out; the caster objects speak in three-letter keys.
-ABILITY_NAMES = {
-    "STR": "Strength",
-    "DEX": "Dexterity",
-    "CON": "Constitution",
-    "INT": "Intelligence",
-    "WIS": "Wisdom",
-    "CHA": "Charisma",
-    }
+from app.components.sheet_data import cell
+from app.components.sheet_data import chip
+from app.components.sheet_data import run
+from app.components.sheet_data import split_prose
 
 
 # The sheet spells abilities out; the caster objects speak in three-letter keys.
@@ -748,11 +741,536 @@ def spellbook_html(
     return "\n".join(parts)
 
 
+def _focus_points(
+        caster: Any,
+        ) -> int:
+    """Focus points a caster carries, 0 when the class has none."""
+    focus_points = getattr(
+            caster,
+            "focus_points",
+            None,
+            )
+    if focus_points is None:
+        return 0
+
+    try:
+        return int(
+                focus_points or 0
+                )
+    except Exception:
+        return 0
+
+
+def spell_slots_data(
+        caster: Any,
+        ) -> dict | None:
+    """The rail's slot well as data: its table, its title, its notes.
+
+    The chips used to smuggle this in as an HTML table inside a chip's
+    value; a chip's value is one string, so the well is its own thing now.
+    """
+    slots = getattr(
+            caster,
+            "spell_slots",
+            None,
+            )
+
+    if not slots or _focus_points( caster ):
+        return None
+
+    try:
+        items = list(
+                slots.items()
+                )
+    except Exception:
+        return None
+
+    rows: list[dict] = []
+
+    for level, number in items:
+        if not number:
+            continue
+        rows.append(
+                {
+                    "cells": [
+                        cell(
+                                f"Level {level}"
+                                ),
+                        cell(
+                                str(
+                                    number
+                                    ),
+                                bold=True,
+                                ),
+                        ],
+                    }
+                )
+
+    if not rows:
+        return None
+
+    class_name = safe_str(
+            getattr(
+                    caster,
+                    "class_name",
+                    "",
+                    ),
+            "",
+            ).strip()
+    is_warlock = class_name == "Warlock"
+    notes = (
+        [
+            "All slots at this level.",
+            "Regain on a short or long rest.",
+            ]
+        if is_warlock
+        else [
+            "Regain all on a long rest.",
+            ]
+        )
+
+    return {
+            "title": "PACT MAGIC" if is_warlock else "SPELL SLOTS",
+            "table": {
+                "rows": rows,
+                },
+            "notes": [
+                {
+                    "runs": [
+                        run(
+                            note
+                            ),
+                        ],
+                    }
+                for note in notes
+                ],
+            }
+
+
+def spellcasting_chip_data(
+        caster: Any,
+        ) -> list[dict]:
+    """The rail's magic chips, each carrying its sigil instead of an emoji."""
+    chips: list[dict] = []
+
+    class_name = safe_str(
+            getattr(
+                    caster,
+                    "class_name",
+                    "",
+                    ),
+            "",
+            ).strip()
+    is_monk = _focus_points( caster ) > 0
+    parameter_sets = (
+        ()
+        if is_monk
+        else _spellcasting_parameter_sets(
+                caster
+                )
+        )
+    show_sources = len(
+            parameter_sets
+            ) > 1
+
+    for parameters in parameter_sets:
+        prefix = (
+            f"{parameters.source} "
+            if show_sources
+            else ""
+            )
+        chips.append(
+                chip(
+                    "🪄",
+                    f"{prefix}Spellcasting Ability",
+                    ABILITY_NAMES.get(
+                            parameters.ability,
+                            parameters.ability.capitalize(),
+                            ),
+                    )
+                )
+        chips.append(
+                chip(
+                    "🔮",
+                    f"{prefix}Spell Save DC",
+                    str(
+                        parameters.save_dc
+                        ),
+                    )
+                )
+
+    sorcery_points = getattr(
+            caster,
+            "sorcery_points",
+            None,
+            )
+
+    if sorcery_points is not None:
+        chips.append(
+                chip(
+                    "💜",
+                    "Sorcery Points",
+                    str(
+                        sorcery_points
+                        ),
+                    )
+                )
+
+    focus_points = getattr(
+            caster,
+            "focus_points",
+            None,
+            )
+
+    if is_monk:
+        chips.append(
+                chip(
+                    "☯",
+                    "Focus Points",
+                    (
+                        f"{focus_points}\n"
+                        "(Ki — regain on a short or long rest.)"
+                        ),
+                    )
+                )
+
+        if hasattr(
+                caster,
+                "focus_save_dc",
+                ):
+            try:
+                chips.append(
+                        chip(
+                            "🌀",
+                            "Focus Save DC",
+                            str(
+                                caster.focus_save_dc()
+                                ),
+                            )
+                        )
+            except Exception:
+                pass
+
+    arcanums = getattr(
+            caster,
+            "mystic_arcanum",
+            None,
+            ) or []
+
+    if arcanums:
+        try:
+            names = [
+                (
+                    f"L{getattr(spell, 'level', '?')}: "
+                    f"{getattr(spell, 'name', spell)}"
+                    )
+                for spell in arcanums
+                ]
+
+            if names:
+                chips.append(
+                        chip(
+                            "🀄",
+                            "Mystic Arcanum",
+                            (
+                                "\n".join(names)
+                                + "\n(Once each per long rest.)"
+                                ),
+                            )
+                        )
+        except Exception:
+            pass
+
+    return chips
+
+
+def known_spells_groups(
+        caster: Any,
+        ) -> list[dict]:
+    """Known spell names grouped under their level, as the rail lists them."""
+    by_level = known_spells_by_level(
+            caster
+            )
+
+    return [
+        {
+            "title": (
+                "Cantrips"
+                if level == 0
+                else f"Level {level}"
+                ),
+            "names": [
+                {
+                    "body": name,
+                    }
+                for name in names
+                ],
+            }
+        for level, names in by_level.items()
+        ]
+
+
+def _spell_meta_line(
+        spell: Any,
+        *,
+        ability: str,
+        ) -> str:
+    """One italic line: how the spell is cast, where it reaches, its parts."""
+    bits: list[str] = []
+
+    casting_time = safe_str(
+            getattr(
+                    spell,
+                    "casting_time",
+                    "",
+                    ),
+            "",
+            ).strip()
+    if casting_time:
+        bits.append(
+                f"⟨{casting_time}⟩"
+                )
+
+    if getattr(
+            spell,
+            "ritual",
+            False,
+            ):
+        bits.append(
+                "(Ritual)"
+                )
+
+    concentration = safe_str(
+            getattr(
+                    spell,
+                    "concentration",
+                    "",
+                    ),
+            "",
+            ).strip()
+    duration = safe_str(
+            getattr(
+                    spell,
+                    "duration",
+                    "",
+                    ),
+            "",
+            ).strip()
+
+    #-- A concentration spell's duration already reads "Concentration, up
+    #-- to 1 minute"; printing the label beside it said it twice.
+    if concentration and concentration not in duration:
+        bits.append(
+                f"({concentration})"
+                )
+
+    if duration:
+        bits.append(
+                f"({duration})"
+                )
+
+    ranges = safe_str(
+            getattr(
+                    spell,
+                    "ranges",
+                    "",
+                    ),
+            "",
+            ).strip()
+    if ranges:
+        bits.append(
+                f">{ranges}>"
+                )
+
+    components = safe_str(
+            getattr(
+                    spell,
+                    "components",
+                    "",
+                    ),
+            "",
+            ).strip()
+    if components:
+        bits.append(
+                f"⦓{components}⦔"
+                )
+
+    if ability:
+        bits.append(
+                f"[{ability.capitalize( )}]"
+                )
+
+    return " · ".join(
+            bits
+            )
+
+
+def _spell_entry(
+        spell: Any,
+        *,
+        ability: str,
+        ) -> dict:
+    """One spell card as a sheet entry: name, level, cast line, rules."""
+    level = getattr(
+            spell,
+            "level",
+            0,
+            )
+    flavor: list[dict] = []
+    paras: list[dict] = []
+    bullets: list[dict] = []
+
+    meta = _spell_meta_line(
+            spell,
+            ability=ability,
+            )
+
+    if meta:
+        flavor.append(
+                {
+                    "runs": [
+                        run(
+                            meta
+                            ),
+                        ],
+                    }
+                )
+
+    flavor_from_rules, paras, bullets = split_prose(
+            f"<p>{getattr(spell, 'definition', '') or ''}</p>"
+            )
+    flavor.extend(
+            flavor_from_rules
+            )
+
+    return {
+            "name": safe_str(
+                    getattr(
+                            spell,
+                            "name",
+                            "Spell",
+                            ),
+                    "Spell",
+                    ).strip(),
+            "sub": (
+                "Cantrip"
+                if level == 0
+                else f"Level {level} Spell"
+                ),
+            "flavor": flavor,
+            "paras": paras,
+            "bullets": bullets,
+            "entries": [],
+            }
+
+
+def spellbook_block(
+        caster: Any,
+        *,
+        title: str,
+        ) -> dict | None:
+    """The spell book branch of the Class section, as one Block of entries."""
+    spells = _unique_spells(
+            getattr(
+                    caster,
+                    "spells_known",
+                    None,
+                    ) or []
+            )
+
+    if not spells:
+        return None
+
+    ordered = sorted(
+            spells,
+            key=lambda spell: (
+                getattr(
+                        spell,
+                        "level",
+                        0,
+                        ),
+                getattr(
+                        spell,
+                        "name",
+                        "",
+                        ),
+                ),
+            )
+    ability = safe_str(
+            getattr(
+                    caster,
+                    "casting_stat",
+                    "",
+                    ),
+            "",
+            ).strip()
+    class_name = safe_str(
+            getattr(
+                    caster,
+                    "class_name",
+                    "",
+                    ),
+            "",
+            ).strip()
+
+    intro: list[dict] = []
+
+    if ability:
+        intro_runs = [
+            run(
+                "You cast using "
+                ),
+            run(
+                ability.capitalize(),
+                bold=True,
+                ),
+            ]
+
+        if class_name:
+            intro_runs.append(
+                    run(
+                        f" as a {class_name}"
+                        )
+                    )
+
+        intro_runs.append(
+                run(
+                    "."
+                    )
+                )
+        intro.append(
+                {
+                    "runs": intro_runs,
+                    }
+                )
+
+    return {
+            "heading": title,
+            "flavor": [],
+            "paras": intro,
+            "bullets": [],
+            "tables": [],
+            "notes": [],
+            "entries": [
+                _spell_entry(
+                        spell,
+                        ability=ability,
+                        )
+                for spell in ordered
+                ],
+            "seal": False,
+            }
+
+
 __all__ = [
     "known_spells_by_level",
+    "known_spells_groups",
     "known_spells_rail_box",
+    "spell_slots_data",
+    "spellbook_block",
     "spellbook_html",
     "spellcasting_chips",
+    "spellcasting_chip_data",
     ]
 
 

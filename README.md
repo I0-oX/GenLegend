@@ -26,6 +26,10 @@ Boot and generate seed 42. `make replay-player` proves a seeded request replays 
 
 The Home generator face is a [slab](https://github.com/stencil-hq/slab) document: `app/slab/forge.slab` compiles to the web component in `app/static/slab/` plus its fonts in `app/static/fonts/`, all committed so no deploy builds anything. To change the face, edit the `.slab` and run `make slab` (pinned CLI, needs `bun`), then `make smoke-player`; `make slab-check` fails when the committed build drifts from the source. slab owns everything inside the element — layout, type, states — so there is no CSS for it beyond the `.forge-host` wrapper in `app/static/style.css`. Touch is handled in the document itself: `when coarse` (slab's `pointer: coarse` env ident) grows the picker rows from 38u to the 44u touch-target floor on phones and tablets, while a mouse desktop keeps the tight row. The chrome that would otherwise run past a phone edge — the header pills and the footer links — stacks under `when w<560`, the same breakpoint the pickers already use. `app/static/js/app.js` is the only seam: it feeds choices in and pushes the picks back as the `char_species` / `char_class` / `char_background` / `btn_gen_char` inputs the server al…
 
+## Icon credits
+
+Sheet symbols — ability discs, stat chips, feature chips — are line art from [game-icons.net](https://game-icons.net) under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), served from `app/static/icons/` as provided by the Iconify `game-icons` collection (no glyph modified; attribution for the full set at <https://game-icons.net/about.html>). Emoji outside that table still render as text.
+
 ## One line: `main`
 
 `origin/main` on GitHub is the product. There is no other remote branch. Local `main` tracks it and is never force-moved (Decree 0008).
