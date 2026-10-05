@@ -46,9 +46,9 @@ tokens {
     // Ruled wash, not a floating card: the ground reads through, the
     // form is written on the same page the sheet is.
     card  { bg linear(180, #F4EBD469 0%, #EADDBA60 100%); stroke #96794A; stroke-w 1; radius 4; grain 0.05 }
-    field { bg #EEE3C299; stroke #96794A; stroke-w 1; radius 4; grain 0.04 }
+    field { bg none; stroke #96794A; stroke-w 1; radius 4 }
     well  { bg radial(#E4D2A6E6 0%, #D8C294DE 100%); stroke #96794A; stroke-w 1; radius 6; grain 0.11 }
-    step  { bg #EEE3C299; stroke #96794A; stroke-w 1; radius 4; grain 0.04 }
+    step  { bg none; stroke #96794A; stroke-w 1; radius 4 }
     button { bg linear(180, #B5352F 0%, #7E1F1C 100%); radius 4 }
     ghost { stroke #96794A; stroke-w 1; radius 4 }
   }

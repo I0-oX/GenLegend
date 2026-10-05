@@ -14,8 +14,8 @@
 
 tokens {
   color {
-    leather      #2E1E10   // bound-leather chrome ground
-    leatherHover #43301B   // raised leather, pill hover
+    leather      #3A2513   // bound-leather chrome ground
+    leatherHover #4E3A22   // raised leather, pill hover
     tooling      #A97B1D   // hairline borders (gilt tooling)
     gold         #D9A441   // brand, gilt accents
     goldDeep     #A97B1D   // resting accent stroke
