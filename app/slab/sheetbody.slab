@@ -47,10 +47,10 @@ tokens {
   fx {
     // A ruled wash, not a card: the ground's mottle reads through, the
     // ink sits on the same page the rest of the sheet is written on.
-    panel   { bg linear(180, #F3EAD3A6 0%, #EBDFBBA0 100%); stroke #96794A; stroke-w 1; radius 4; grain 0.09 }
-    tile    { bg #EFE5C7; stroke #A48952; stroke-w 1; radius 7; grain 0.06 }
+    panel   { bg linear(180, #F3EAD369 0%, #EBDFBB60 100%); stroke #96794A; stroke-w 1; radius 4; grain 0.05 }
+    tile    { bg #EFE5C799; stroke #A48952; stroke-w 1; radius 7; grain 0.035 }
     seal    { bg radial(#E4D2A6 0%, #D8C294 100%); stroke #96794A; stroke-w 1; radius 8; grain 0.1 }
-    arcane  { bg linear(180, #E9E2D6 0%, #DED6C7 100%); stroke #4A2E6B; stroke-w 1; radius 10; grain 0.08 }
+    arcane  { bg linear(180, #E9E2D699 0%, #DED6C790 100%); stroke #4A2E6B; stroke-w 1; radius 10; grain 0.04 }
   }
   shadow {
     lift  0,6,18,#8E24263D
