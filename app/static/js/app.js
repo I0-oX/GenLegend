@@ -18,7 +18,7 @@
 (() => {
     'use strict';
 
-    const SLAB_VERSION = '34';
+    const SLAB_VERSION = '35';
     // Detail marks (clouds/splotches/fibers/flecks) scattered on
     // <gl-parchment> each load — must match DETAIL in parchment.slab.
     const PARCHMENT_MARKS = 244;
@@ -76,6 +76,18 @@
         parchment.m8y = rand(-180, Math.max(-40, vh - 460));
         parchment.m9x = rand(-60, Math.max(-40, vw - 700));
         parchment.m9y = rand(-120, Math.max(-40, vh - 420));
+        // The cup ring and the three tonal masses travel with the seed:
+        // position AND strength, so consecutive sheets read as genuinely
+        // different parchment — dark-blotched, bleached, warm — not the
+        // same texture re-arranged.
+        parchment.ringx = rand(80, Math.max(140, vw - 560));
+        parchment.ringy = rand(40, Math.max(120, vh - 420));
+        parchment.t1x = rand(-300, vw - 460);
+        parchment.t1y = rand(-240, vh - 400);
+        parchment.t2x = rand(-260, vw - 420);
+        parchment.t2y = rand(-200, vh - 380);
+        parchment.t3x = rand(-240, vw - 380);
+        parchment.t3y = rand(-180, vh - 340);
         // The detail tangle: every fiber, fleck and foxing bloom is
         // re-aimed, so the scatter never repeats between characters.
         for (let i = 0; i < PARCHMENT_MARKS; i += 1) {

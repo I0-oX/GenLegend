@@ -80,6 +80,13 @@ params {
   m7x num = 700;  m7y num = 200
   m8x num = 260;  m8y num = 620
   m9x num = 1020; m9y num = 120
+  // cup ring drifts with the seed
+  ringx num = 640; ringy num = 260
+  // three tonal masses — position AND strength come from the seed, so
+  // consecutive sheets read as different pieces of parchment
+  t1x num = 200; t1y num = 80
+  t2x num = 700; t2y num = 420
+  t3x num = 420; t3y num = 620
   // 244 detail marks (clouds, splotches, fibers, flecks) — d<i>x/d<i>y
   // every one re-aimed per load by app.js
   d0x num = 0; d0y num = 0  d1x num = 0; d1y num = 0
@@ -230,8 +237,15 @@ stack w=fill h=fill style=fx.parchment animate=settle,900,once,ease-out {
   rect w=720 h=540 rotate=-11 offset=param.m3x,param.m3y self=top-start bg=radial(#FFEFC023 0%, #FFEFC023 30%, #FFEFC000 76%)
   rect w=660 h=480 rotate=-24 offset=param.m7x,param.m7y self=top-start bg=radial(#FFEFC01B 0%, #FFEFC01B 30%, #FFEFC000 76%)
 
+  // Per-seed tonal masses: a dark age blot, a bleached patch, a warm
+  // soak — position AND strength come from the seed, so two creations
+  // never share the same tone.
+  rect w=1150 h=860 rotate=-12 offset=param.t1x,param.t1y self=top-start opacity=0.20 bg=radial(#4E2A08 0%, #4E2A08 18%, #4E2A0800 74%)
+  rect w=980 h=760 rotate=9 offset=param.t2x,param.t2y self=top-start opacity=0.16 bg=radial(#F3E1B4 0%, #F3E1B4 16%, #F3E1B400 72%)
+  rect w=900 h=700 rotate=-19 offset=param.t3x,param.t3y self=top-start opacity=0.14 bg=radial(#C08A34 0%, #C08A34 20%, #C08A3400 76%)
+
   // cup ring, off-center and not quite closed
-  rect w=520 h=400 offset=640,260 self=top-start style=fx.anillo
+  rect w=520 h=400 offset=param.ringx,param.ringy self=top-start style=fx.anillo
 
   // ---- the procedural mottle: clouds, splotches, stains, fibers
   rect w=632 h=407 rotate=-29 offset=param.d0x,param.d0y self=top-start bg=radial(#A97B3860 0%, #A97B3860 26%, #A97B3800 70%)
