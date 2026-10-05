@@ -46,15 +46,15 @@ tokens {
     // Ruled wash, not a floating card: the ground reads through, the
     // form is written on the same page the sheet is.
     card  { bg linear(180, #F4EBD469 0%, #EADDBA60 100%); stroke #96794A; stroke-w 1; radius 4; grain 0.05 }
-    field { bg #EEE3C299; stroke #96794A; stroke-w 1; radius 10; grain 0.04 }
-    well  { bg radial(#E4D2A6 0%, #D8C294 100%); stroke #96794A; stroke-w 1; radius 10; grain 0.11 }
-    step  { bg #EEE3C299; stroke #96794A; stroke-w 1; radius 10; grain 0.04 }
-    button { bg linear(180, #B5352F 0%, #7E1F1C 100%); radius 10 }
-    ghost { stroke #96794A; stroke-w 1; radius 10 }
+    field { bg #EEE3C299; stroke #96794A; stroke-w 1; radius 4; grain 0.04 }
+    well  { bg radial(#E4D2A6E6 0%, #D8C294DE 100%); stroke #96794A; stroke-w 1; radius 6; grain 0.11 }
+    step  { bg #EEE3C299; stroke #96794A; stroke-w 1; radius 4; grain 0.04 }
+    button { bg linear(180, #B5352F 0%, #7E1F1C 100%); radius 4 }
+    ghost { stroke #96794A; stroke-w 1; radius 4 }
   }
   shadow {
     well inset,0,2,8,#6E52303D
-    lift 0,10,26,#8E242647
+    lift 0,5,14,#8E242659
   }
 }
 
@@ -216,8 +216,8 @@ col key=page w=fill gap=14 {
     // the overlay child itself (animate as a direct `when` patch is not
     // supported by slab 0.1.0).
     when open_species {
-      col w=24% min-w=240 h=176 pad=6 gap=3 style=fx.well radius=12 \
-          shadow=0,18,44,#3A2A14CC scroll \
+      col w=24% min-w=240 h=176 pad=6 gap=3 style=fx.well radius=6 \
+          shadow=0,8,24,#3A2A14B3 scroll \
           scrollbar=auto scrollbar-w=4 scrollbar-fg=color.ochre scrollbar-bg=#8A5A1233 \
           attach="page/card/flow/selects/Selector@0/sel/field" \
           gravity=below-start collide=none offset=0,6 \
@@ -227,8 +227,8 @@ col key=page w=fill gap=14 {
       }
     }
     when open_background {
-      col w=24% min-w=240 h=176 pad=6 gap=3 style=fx.well radius=12 \
-          shadow=0,18,44,#3A2A14CC scroll \
+      col w=24% min-w=240 h=176 pad=6 gap=3 style=fx.well radius=6 \
+          shadow=0,8,24,#3A2A14B3 scroll \
           scrollbar=auto scrollbar-w=4 scrollbar-fg=color.ochre scrollbar-bg=#8A5A1233 \
           attach="page/card/flow/selects/Selector@1/sel/field" \
           gravity=below-start collide=none offset=0,6 \
@@ -238,8 +238,8 @@ col key=page w=fill gap=14 {
       }
     }
     when open_char_class {
-      col w=24% min-w=240 h=176 pad=6 gap=3 style=fx.well radius=12 \
-          shadow=0,18,44,#3A2A14CC scroll \
+      col w=24% min-w=240 h=176 pad=6 gap=3 style=fx.well radius=6 \
+          shadow=0,8,24,#3A2A14B3 scroll \
           scrollbar=auto scrollbar-w=4 scrollbar-fg=color.ochre scrollbar-bg=#8A5A1233 \
           attach="page/card/flow/selects/Selector@2/sel/field" \
           gravity=below-start collide=none offset=0,6 \
@@ -249,8 +249,8 @@ col key=page w=fill gap=14 {
       }
     }
     when open_specialization {
-      col w=24% min-w=240 h=176 pad=6 gap=3 style=fx.well radius=12 \
-          shadow=0,18,44,#3A2A14CC scroll \
+      col w=24% min-w=240 h=176 pad=6 gap=3 style=fx.well radius=6 \
+          shadow=0,8,24,#3A2A14B3 scroll \
           scrollbar=auto scrollbar-w=4 scrollbar-fg=color.ochre scrollbar-bg=#8A5A1233 \
           attach="page/card/flow/selects/Selector@3/sel/field" \
           gravity=below-start collide=none offset=0,6 \

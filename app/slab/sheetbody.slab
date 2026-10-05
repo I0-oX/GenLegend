@@ -48,12 +48,6 @@ tokens {
     // A ruled wash, not a card: the ground's mottle reads through, the
     // ink sits on the same page the rest of the sheet is written on.
     panel   { bg linear(180, #F3EAD369 0%, #EBDFBB60 100%); stroke #96794A; stroke-w 1; radius 4; grain 0.05 }
-    tile    { bg #EFE5C799; stroke #A48952; stroke-w 1; radius 7; grain 0.035 }
-    seal    { bg radial(#E4D2A6 0%, #D8C294 100%); stroke #96794A; stroke-w 1; radius 8; grain 0.1 }
-    arcane  { bg linear(180, #E9E2D699 0%, #DED6C790 100%); stroke #4A2E6B; stroke-w 1; radius 10; grain 0.04 }
-  }
-  shadow {
-    lift  0,6,18,#8E24263D
   }
 }
 
@@ -309,8 +303,8 @@ def Block(heading="", has_heading=false, has_flavor=false, \
     // expression, so "this block has a table" ships beside the table.
     when seal {
       pad=9,11
-      bg=linear(180, #E4D2A6 0%, #D8C294 100%)
-      radius=8
+      bg=linear(180, #E4D2A699 0%, #D8C2948C 100%)
+      radius=4
       stroke=color.line
       stroke-w=1
     }

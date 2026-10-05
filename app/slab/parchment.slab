@@ -65,7 +65,7 @@ tokens {
     foxingL { bg radial(rgba(150, 96, 38, 0.28) 0%, rgba(150, 96, 38, 0) 72%) }
 
     // Corner shadow: warm and deep — the reference's dark frame.
-    vig { bg radial(#5E330B00 46%, #5E330B91 100%) }
+    vig { bg radial(#5E330B00 46%, #5E330B6B 100%) }
   }
 }
 
@@ -502,8 +502,8 @@ stack w=fill h=fill style=fx.parchment animate=settle,900,once,ease-out {
 
   // ---- the dark frame: four edges sinking into umber (reference)
   rect w=fill h=fill style=fx.vig
-  rect w=fill h=fill bg=linear(180, #5E330BC7 0%, #5E330B00 13%)
-  rect w=fill h=fill bg=linear(0,   #5E330BD1 0%, #5E330B00 13%)
-  rect w=fill h=fill bg=linear(90,  #5E330BC0 0%, #5E330B00 11%)
-  rect w=fill h=fill bg=linear(-90, #5E330BC0 0%, #5E330B00 11%)
+  rect w=fill h=fill bg=linear(180, #5E330BA3 0%, #5E330B00 10%)
+  rect w=fill h=fill bg=linear(0,   #5E330BAC 0%, #5E330B00 10%)
+  rect w=fill h=fill bg=linear(90,  #5E330B9A 0%, #5E330B00 9%)
+  rect w=fill h=fill bg=linear(-90, #5E330B9A 0%, #5E330B00 9%)
 }

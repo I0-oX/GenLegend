@@ -28,7 +28,7 @@ tokens {
     nav   { family "Cinzel"; size 14; weight 700; tracking 1.6 }
   }
   fx {
-    pill { stroke #A97B1D; stroke-w 1; radius 8 }
+    pill { stroke #A97B1D; stroke-w 1; radius 4 }
   }
 }
 
@@ -49,7 +49,7 @@ def NavLink(caption, action) {
 }
 
 col w=fill animate=unfurl,600,once,ease-out,350 {
-  row w=fill pad=13,28 bg=color.leather align=center gap=16 {
+  row w=fill pad=13,28 bg=color.leather grain=0.14 align=center gap=16 {
     // Phones: brand over nav on its own line — at 390u the one-liner ran
     // the pills past the right edge ("Character" clipped).
     when w<560 { axis=col pad=10,16 gap=10 }
