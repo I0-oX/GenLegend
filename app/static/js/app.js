@@ -18,7 +18,7 @@
 (() => {
     'use strict';
 
-    const SLAB_VERSION = '36';
+    const SLAB_VERSION = '37';
     // Detail marks (clouds/splotches/fibers/flecks) scattered on
     // <gl-parchment> each load — must match DETAIL in parchment.slab.
     const PARCHMENT_MARKS = 244;
@@ -49,9 +49,8 @@
         // Remount per creation: a fresh element rebuilds the slab ground
         // and replays the settle animation, so the parchment is visibly
         // drawn anew together with the sheet — never a stale backdrop.
-        // Every param lands on the DETACHED clone before it mounts:
-        // numeric params are live, but `when` conditions (stripsB/frameB)
-        // bake at build, so a post-mount write would be silently lost.
+        // Params land on the DETACHED clone before it mounts, so the
+        // build bakes the seed rather than catching up later.
         const parchment = host.cloneNode(false);
         const rand = parchmentRandom(seed);
         const vw = window.innerWidth;
@@ -87,22 +86,6 @@
         parchment.t2y = rand(-200, vh - 380);
         parchment.t3x = rand(-240, vw - 380);
         parchment.t3y = rand(-180, vh - 340);
-        // The composition itself drifts: light pool, vignette center and
-        // sheen band re-aim, two fold creases land somewhere new.
-        parchment.poolx = rand(-240, 240);
-        parchment.pooly = rand(-160, 160);
-        parchment.vigx = rand(-140, 140);
-        parchment.vigy = rand(-100, 100);
-        parchment.sheenx = rand(-260, 260);
-        parchment.sheeny = rand(-140, 140);
-        parchment.crease1x = rand(-140, vw - 700);
-        parchment.crease1y = rand(30, vh - 320);
-        parchment.crease2x = rand(-120, vw - 620);
-        parchment.crease2y = rand(30, vh - 280);
-        // Structural lottery: some sheets carry the alternate strip set
-        // and the lighter frame.
-        parchment.stripsB = rand(0, 1) === 1;
-        parchment.frameB = rand(0, 1) === 1;
         // The detail tangle: every fiber, fleck and foxing bloom is
         // re-aimed, so the scatter never repeats between characters.
         for (let i = 0; i < PARCHMENT_MARKS; i += 1) {

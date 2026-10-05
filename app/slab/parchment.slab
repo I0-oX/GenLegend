@@ -51,20 +51,6 @@ tokens {
         #E8D49A00 89%, #E8D49A05 94%, #8F5F1E00 100%);
       grain 0.02
     }
-    // Alternate strip set (seed lottery): clashing tilts the base set
-    // never uses, so half the sheets are banded differently.
-    tirasB1  {
-      bg linear(171.4,
-        #8F5F1E00 0%, #8F5F1E13 12%, #E8D49A00 30%, #E8D49A0D 46%,
-        #8F5F1E00 64%, #8F5F1E10 82%, #8F5F1E00 100%);
-      grain 0.03
-    }
-    tirasB2  {
-      bg linear(8.6,
-        #E8D49A00 0%, #E8D49A0E 18%, #8F5F1E00 38%, #8F5F1E11 58%,
-        #E8D49A00 78%, #8F5F1E00 100%);
-      grain 0.025
-    }
 
     // Warm pool of light over the middle of the sheet.
     pool   { bg radial(#F0D89400 18%, #F0D8941E 46%, #F0D89400 74%) }
@@ -101,16 +87,6 @@ params {
   t1x num = 200; t1y num = 80
   t2x num = 700; t2y num = 420
   t3x num = 420; t3y num = 620
-  // composition itself drifts: light pool, vignette center, sheen band
-  poolx num = 0; pooly num = 0
-  vigx num = 0; vigy num = 0
-  sheenx num = 0; sheeny num = 0
-  // two fold creases — soft scored lines, re-aimed per seed
-  crease1x num = 0; crease1y num = 200
-  crease2x num = 300; crease2y num = 520
-  // seed-toggled structure: extra strip tilt set, lighter frame
-  stripsB bool = false
-  frameB bool = false
   // 244 detail marks (clouds, splotches, fibers, flecks) — d<i>x/d<i>y
   // every one re-aimed per load by app.js
   d0x num = 0; d0y num = 0  d1x num = 0; d1y num = 0
@@ -249,11 +225,6 @@ stack w=fill h=fill style=fx.parchment animate=settle,900,once,ease-out {
   rect w=fill h=fill style=fx.tiras1
   rect w=fill h=fill style=fx.tiras2
   rect w=fill h=fill style=fx.tiras3
-  // half the sheets carry the alternate strip set (seed lottery)
-  when stripsB {
-    rect w=fill h=fill style=fx.tirasB1
-    rect w=fill h=fill style=fx.tirasB2
-  }
 
   // broad washes (m anchors, re-aimed per load)
   rect w=980 h=700 rotate=-6 offset=param.m1x,param.m1y self=top-start bg=radial(#A9702418 0%, #A9702418 30%, #A9702400 76%)
@@ -269,9 +240,9 @@ stack w=fill h=fill style=fx.parchment animate=settle,900,once,ease-out {
   // Per-seed tonal masses: a dark age blot, a bleached patch, a warm
   // soak — each anchor comes from the seed, so two creations never
   // share the same tone.
-  rect w=1150 h=860 rotate=-12 offset=param.t1x,param.t1y self=top-start opacity=0.20 bg=radial(#4E2A08 0%, #4E2A08 18%, #4E2A0800 74%)
-  rect w=980 h=760 rotate=9 offset=param.t2x,param.t2y self=top-start opacity=0.16 bg=radial(#F3E1B4 0%, #F3E1B4 16%, #F3E1B400 72%)
-  rect w=900 h=700 rotate=-19 offset=param.t3x,param.t3y self=top-start opacity=0.14 bg=radial(#C08A34 0%, #C08A34 20%, #C08A3400 76%)
+  rect w=1150 h=860 rotate=-12 offset=param.t1x,param.t1y self=top-start opacity=0.10 bg=radial(#4E2A08 0%, #4E2A08 18%, #4E2A0800 74%)
+  rect w=980 h=760 rotate=9 offset=param.t2x,param.t2y self=top-start opacity=0.11 bg=radial(#F3E1B4 0%, #F3E1B4 16%, #F3E1B400 72%)
+  rect w=900 h=700 rotate=-19 offset=param.t3x,param.t3y self=top-start opacity=0.08 bg=radial(#C08A34 0%, #C08A34 20%, #C08A3400 76%)
 
   // cup ring, off-center and not quite closed
   rect w=520 h=400 offset=param.ringx,param.ringy self=top-start style=fx.anillo
@@ -522,31 +493,17 @@ stack w=fill h=fill style=fx.parchment animate=settle,900,once,ease-out {
   rect w=13 h=13 rotate=-16 offset=param.d242x,param.d242y self=top-start style=fx.foxingL
   rect w=14 h=14 rotate=-9 offset=param.d243x,param.d243y self=top-start style=fx.foxing
 
-  // fold creases — two soft scored lines with their highlight lip,
-  // re-aimed per seed like everything else
-  rect w=1100 h=300 rotate=-2 offset=param.crease1x,param.crease1y self=top-start bg=linear(180, #5E330B00 0%, #5E330B26 44%, #F3E1B420 54%, #F3E1B400 100%)
-  rect w=980 h=260 rotate=3 offset=param.crease2x,param.crease2y self=top-start bg=linear(180, #5E330B00 0%, #5E330B1F 46%, #F3E1B41A 55%, #F3E1B400 100%)
-
   // soft diagonal sheen, then the warm pool
-  rect w=fill h=fill style=fx.sheen offset=param.sheenx,param.sheeny
-  rect w=fill h=fill style=fx.pool offset=param.poolx,param.pooly
+  rect w=fill h=fill style=fx.sheen
+  rect w=fill h=fill style=fx.pool
 
   // fine grit veil
   rect w=fill h=fill style=fx.velo
 
-  // ---- the dark frame: four edges sinking into umber (reference);
-  // frameB = the narrower, lighter frame some sheets carry
-  rect w=fill h=fill style=fx.vig offset=param.vigx,param.vigy
-  when !frameB {
-    rect w=fill h=fill bg=linear(180, #5E330BC7 0%, #5E330B00 13%)
-    rect w=fill h=fill bg=linear(0,   #5E330BD1 0%, #5E330B00 13%)
-    rect w=fill h=fill bg=linear(90,  #5E330BC0 0%, #5E330B00 11%)
-    rect w=fill h=fill bg=linear(-90, #5E330BC0 0%, #5E330B00 11%)
-  }
-  when frameB {
-    rect w=fill h=fill bg=linear(180, #5E330BA3 0%, #5E330B00 8%)
-    rect w=fill h=fill bg=linear(0,   #5E330BAC 0%, #5E330B00 8%)
-    rect w=fill h=fill bg=linear(90,  #5E330B9A 0%, #5E330B00 7%)
-    rect w=fill h=fill bg=linear(-90, #5E330B9A 0%, #5E330B00 7%)
-  }
+  // ---- the dark frame: four edges sinking into umber (reference)
+  rect w=fill h=fill style=fx.vig
+  rect w=fill h=fill bg=linear(180, #5E330BC7 0%, #5E330B00 13%)
+  rect w=fill h=fill bg=linear(0,   #5E330BD1 0%, #5E330B00 13%)
+  rect w=fill h=fill bg=linear(90,  #5E330BC0 0%, #5E330B00 11%)
+  rect w=fill h=fill bg=linear(-90, #5E330BC0 0%, #5E330B00 11%)
 }
