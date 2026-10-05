@@ -18,10 +18,71 @@
 (() => {
     'use strict';
 
-    const SLAB_VERSION = '33';
+    const SLAB_VERSION = '34';
     // Detail marks (clouds/splotches/fibers/flecks) scattered on
     // <gl-parchment> each load — must match DETAIL in parchment.slab.
     const PARCHMENT_MARKS = 244;
+
+    /* The ground is created together with the sheet: a character's hash
+       scatters its own parchment (same hash → same ground), Home takes
+       a fresh lottery per visit. FNV-1a into mulberry32 — slab owns the
+       paint; this only aims the anchors. */
+    function parchmentRandom(seed) {
+        let h = 2166136261 >>> 0;
+        const text = String(seed === undefined || seed === null ? '' : seed);
+        for (let i = 0; i < text.length; i += 1) {
+            h ^= text.charCodeAt(i);
+            h = Math.imul(h, 16777619) >>> 0;
+        }
+        return function rand(min, max) {
+            h = (h + 0x6D2B79F5) >>> 0;
+            let t = h;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return Math.round(min + (((t ^ (t >>> 14)) >>> 0) / 4294967296) * (max - min));
+        };
+    }
+
+    function scatterParchment(seed) {
+        let parchment = document.querySelector('gl-parchment');
+        if (!parchment) return;
+        // Remount before scattering: the fresh element rebuilds the slab
+        // ground and replays the settle animation, so the parchment is
+        // visibly drawn anew together with the sheet — never a stale
+        // backdrop.
+        const fresh = parchment.cloneNode(false);
+        parchment.replaceWith(fresh);
+        parchment = fresh;
+        const rand = parchmentRandom(seed);
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        // Mottle patches drift inside the viewport but may hang off
+        // an edge, like real stains that started beyond the sheet.
+        parchment.m1x = rand(-160, Math.max(-40, vw - 640));
+        parchment.m1y = rand(-120, Math.max(-40, vh - 420));
+        parchment.m2x = rand(-120, Math.max(-40, vw - 560));
+        parchment.m2y = rand(-80, Math.max(-40, vh - 520));
+        parchment.m3x = rand(-180, Math.max(-40, vw - 560));
+        parchment.m3y = rand(-60, Math.max(-40, vh - 460));
+        parchment.m4x = rand(-140, Math.max(-40, vw - 460));
+        parchment.m4y = rand(-140, Math.max(-40, vh - 400));
+        parchment.m5x = rand(-180, Math.max(-40, vw - 560));
+        parchment.m5y = rand(-140, Math.max(-40, vh - 380));
+        parchment.m6x = rand(-80, Math.max(-40, vw - 480));
+        parchment.m6y = rand(-60, Math.max(-40, vh - 420));
+        parchment.m7x = rand(-160, Math.max(-40, vw - 420));
+        parchment.m7y = rand(-120, Math.max(-40, vh - 300));
+        parchment.m8x = rand(-200, Math.max(-40, vw - 620));
+        parchment.m8y = rand(-180, Math.max(-40, vh - 460));
+        parchment.m9x = rand(-60, Math.max(-40, vw - 700));
+        parchment.m9y = rand(-120, Math.max(-40, vh - 420));
+        // The detail tangle: every fiber, fleck and foxing bloom is
+        // re-aimed, so the scatter never repeats between characters.
+        for (let i = 0; i < PARCHMENT_MARKS; i += 1) {
+            parchment['d' + i + 'x'] = rand(-240, vw - 40);
+            parchment['d' + i + 'y'] = rand(-160, vh - 40);
+        }
+    }
     const FONTS = [
         ['Cinzel', '/static/fonts/slab-cinzel-700.ttf'],
         ['Eagle Lake', '/static/fonts/slab-eagle-lake-400.ttf'],
@@ -481,6 +542,9 @@
         state.sheet.error = '';
         closeFields();
         paintSheetBody(data.sheet_data);
+        // The parchment is created together with the sheet: the
+        // character's hash aims every stain and fiber of its own ground.
+        scatterParchment(data.hash || location.hash);
         // The user may have hit Home while this ran — never yank them back
         // to the sheet, neither via the hash nor via the view itself.
         if (!state.skipRestore) {
@@ -750,43 +814,11 @@
             return;
         }
 
-        /* Per-load imperfection: hand the parchment a fresh scatter of
-           tone patches AND the whole detail tangle (108 fiber/fleck/
-           foxing anchors on <gl-parchment>), so no two visits look the
-           same. Slab owns the paint — this only moves anchors; no SVG,
-           no CSS lines. */
-        const parchment = document.querySelector('gl-parchment');
-        if (parchment) {
-            const rand = (min, max) => Math.round(min + Math.random() * (max - min));
-            const vw = window.innerWidth;
-            const vh = window.innerHeight;
-            // Mottle patches drift inside the viewport but may hang off
-            // an edge, like real stains that started beyond the sheet.
-            parchment.m1x = rand(-160, Math.max(-40, vw - 640));
-            parchment.m1y = rand(-120, Math.max(-40, vh - 420));
-            parchment.m2x = rand(-120, Math.max(-40, vw - 560));
-            parchment.m2y = rand(-80, Math.max(-40, vh - 520));
-            parchment.m3x = rand(-180, Math.max(-40, vw - 560));
-            parchment.m3y = rand(-60, Math.max(-40, vh - 460));
-            parchment.m4x = rand(-140, Math.max(-40, vw - 460));
-            parchment.m4y = rand(-140, Math.max(-40, vh - 400));
-            parchment.m5x = rand(-180, Math.max(-40, vw - 560));
-            parchment.m5y = rand(-140, Math.max(-40, vh - 380));
-            parchment.m6x = rand(-80, Math.max(-40, vw - 480));
-            parchment.m6y = rand(-60, Math.max(-40, vh - 420));
-            parchment.m7x = rand(-160, Math.max(-40, vw - 420));
-            parchment.m7y = rand(-120, Math.max(-40, vh - 300));
-            parchment.m8x = rand(-200, Math.max(-40, vw - 620));
-            parchment.m8y = rand(-180, Math.max(-40, vh - 460));
-            parchment.m9x = rand(-60, Math.max(-40, vw - 700));
-            parchment.m9y = rand(-120, Math.max(-40, vh - 420));
-            // The detail tangle: every fiber, fleck and foxing bloom is
-            // re-aimed, so the scatter never repeats between visits.
-            for (let i = 0; i < PARCHMENT_MARKS; i += 1) {
-                parchment['d' + i + 'x'] = rand(-240, vw - 40);
-                parchment['d' + i + 'y'] = rand(-160, vh - 40);
-            }
-        }
+        /* Home's own imperfection: a fresh ground for the visit; a
+           sheet redraws it from its hash when it paints (see
+           applyGenerated). Slab owns the paint — this only aims
+           anchors; no SVG, no CSS lines. */
+        scatterParchment(location.hash || 'home:' + Date.now());
 
         state.shell = document.querySelector('gl-shell');
         state.forge = document.querySelector('gl-forge');

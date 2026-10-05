@@ -45,13 +45,14 @@ tokens {
     chip     { family "Eagle Lake"; size 14; leading 1.35 }
   }
   fx {
-    panel   { bg linear(180, #F3EAD3 0%, #EBDFBB 100%); stroke #96794A; stroke-w 1; radius 10; grain 0.09 }
+    // A ruled wash, not a card: the ground's mottle reads through, the
+    // ink sits on the same page the rest of the sheet is written on.
+    panel   { bg linear(180, #F3EAD3A6 0%, #EBDFBBA0 100%); stroke #96794A; stroke-w 1; radius 4; grain 0.09 }
     tile    { bg #EFE5C7; stroke #A48952; stroke-w 1; radius 7; grain 0.06 }
     seal    { bg radial(#E4D2A6 0%, #D8C294 100%); stroke #96794A; stroke-w 1; radius 8; grain 0.1 }
     arcane  { bg linear(180, #E9E2D6 0%, #DED6C7 100%); stroke #4A2E6B; stroke-w 1; radius 10; grain 0.08 }
   }
   shadow {
-    panel 0,8,24,#3A2A1447
     lift  0,6,18,#8E24263D
   }
 }
@@ -427,7 +428,7 @@ col#page w=fill pad=22,20 gap=20 {
 
       when has_chips {
         col key=particulars w=fill pad=11 gap=3 \
-            style=fx.panel shadow=shadow.panel {
+            style=fx.panel {
           text "PARTICULARS" style=text.head size=15 color=color.ink
           rect h=1 w=fill bg=color.line opacity=0.6
           each param.chips
@@ -435,7 +436,7 @@ col#page w=fill pad=22,20 gap=20 {
       }
 
       when has_scores {
-        col key=scores w=fill pad=11 gap=7 style=fx.panel shadow=shadow.panel {
+        col key=scores w=fill pad=11 gap=7 style=fx.panel {
           text "ABILITIES" style=text.head size=15 color=color.ink
           rect h=1 w=fill bg=color.line opacity=0.6
           grid w=fill cols=fill,fill,fill gap=0,8 {
@@ -445,7 +446,7 @@ col#page w=fill pad=22,20 gap=20 {
       }
 
       when has_skills {
-        col key=skills w=fill pad=11 gap=5 style=fx.panel shadow=shadow.panel {
+        col key=skills w=fill pad=11 gap=5 style=fx.panel {
           row w=fill gap=8 align=center {
             text "SKILLS" style=text.head size=15 color=color.ink w=fill
             text param.passive style=text.label color=color.inkSoft
@@ -456,7 +457,7 @@ col#page w=fill pad=22,20 gap=20 {
       }
 
       when has_saves {
-        col key=saves w=fill pad=11 gap=5 style=fx.panel shadow=shadow.panel {
+        col key=saves w=fill pad=11 gap=5 style=fx.panel {
           text "SAVING THROWS" style=text.head size=15 color=color.ink
           rect h=1 w=fill bg=color.line opacity=0.6
           each param.saves
@@ -464,7 +465,7 @@ col#page w=fill pad=22,20 gap=20 {
       }
 
       when has_attacks {
-        col key=attacks w=fill pad=11 gap=5 style=fx.panel shadow=shadow.panel {
+        col key=attacks w=fill pad=11 gap=5 style=fx.panel {
           text "ATTACK ROLLS" style=text.head size=15 color=color.ink
           rect h=1 w=fill bg=color.line opacity=0.6
           AttackHead
@@ -479,7 +480,7 @@ col#page w=fill pad=22,20 gap=20 {
       }
 
       when has_magic {
-        col key=magic w=fill pad=11 gap=3 style=fx.panel shadow=shadow.panel {
+        col key=magic w=fill pad=11 gap=3 style=fx.panel {
           text "SPELLS & RESOURCES" style=text.head size=15 color=color.arcane
           rect h=1 w=fill bg=color.arcane opacity=0.5
           each param.magic
@@ -487,7 +488,7 @@ col#page w=fill pad=22,20 gap=20 {
       }
 
       when has_slots {
-        col key=slots w=fill pad=11 gap=5 style=fx.panel shadow=shadow.panel {
+        col key=slots w=fill pad=11 gap=5 style=fx.panel {
           text param.slots_title style=text.head size=15 color=color.arcane
           rect h=1 w=fill bg=color.arcane opacity=0.5
           each param.slots
@@ -496,7 +497,7 @@ col#page w=fill pad=22,20 gap=20 {
       }
 
       when has_spells {
-        col key=known w=fill pad=11 gap=9 style=fx.panel shadow=shadow.panel {
+        col key=known w=fill pad=11 gap=9 style=fx.panel {
           text "KNOWN SPELLS" style=text.head size=15 color=color.arcane
           rect h=1 w=fill bg=color.arcane opacity=0.5
           each param.spells

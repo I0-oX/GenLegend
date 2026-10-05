@@ -42,14 +42,15 @@ tokens {
     hint    { family "Cinzel"; size 12; weight 700; tracking 1.2 }
   }
   fx {
-    card  { bg linear(180, #F4EBD4 0%, #EADDBA 100%); stroke #96794A; stroke-w 1; radius 16; grain 0.10 }
+    // Same ruled wash as the sheet's card — the home writes onto the
+    // one parchment, never onto a pasted panel.
+    card  { bg linear(180, #F4EBD4A6 0%, #EADDBAA0 100%); stroke #96794A; stroke-w 1; radius 4; grain 0.10 }
     well  { bg radial(#E4D2A6 0%, #D8C294 100%); stroke #96794A; stroke-w 1; radius 10; grain 0.11 }
     field { bg #EEE3C2; stroke #96794A; stroke-w 1; radius 10; grain 0.07 }
     pill  { bg #EBDFBC; stroke #96794A; stroke-w 1; radius 999; grain 0.09 }
     button { bg linear(180, #B5352F 0%, #7E1F1C 100%); radius 12 }
   }
   shadow {
-    card 0,16,40,#3A2A1466
     well inset,0,2,8,#6E52303D
     lift 0,12,30,#8E242647
   }
@@ -168,7 +169,7 @@ col w=fill gap=30 {
         animate=unfurl,700,once,ease-out,280
   }
 
-  col w=fill gap=18 pad=24 style=fx.card shadow=shadow.card \
+  col w=fill gap=18 pad=24 style=fx.card \
       animate=unfurl,700,once,ease-out,700 {
     // Phones: 24u of side padding costs 12u of list width;
     // the card breathes better at 18u.

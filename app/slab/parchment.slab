@@ -206,7 +206,14 @@ params {
   d242x num = 0; d242y num = 0  d243x num = 0; d243y num = 0
   }
 
-stack w=fill h=fill style=fx.parchment {
+// The ground develops from nothing as the sheet is written onto it —
+// every creation (a fresh character, a fresh visit) plays this.
+anim settle {
+  0% { opacity=0 }
+  100% { opacity=1 }
+}
+
+stack w=fill h=fill style=fx.parchment animate=settle,900,once,ease-out {
   // strip tone, two clashing tilts -> organic interference, no hard lines
   rect w=fill h=fill style=fx.tiras1
   rect w=fill h=fill style=fx.tiras2

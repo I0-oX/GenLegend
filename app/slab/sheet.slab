@@ -43,7 +43,9 @@ tokens {
     hint   { family "Cinzel"; size 12; weight 700; tracking 1.2 }
   }
   fx {
-    card  { bg linear(180, #F4EBD4 0%, #EADDBA 100%); stroke #96794A; stroke-w 1; radius 14; grain 0.10 }
+    // Ruled wash, not a floating card: the ground reads through, the
+    // form is written on the same page the sheet is.
+    card  { bg linear(180, #F4EBD4A6 0%, #EADDBAA0 100%); stroke #96794A; stroke-w 1; radius 4; grain 0.10 }
     field { bg #EEE3C2; stroke #96794A; stroke-w 1; radius 10; grain 0.07 }
     well  { bg radial(#E4D2A6 0%, #D8C294 100%); stroke #96794A; stroke-w 1; radius 10; grain 0.11 }
     step  { bg #EEE3C2; stroke #96794A; stroke-w 1; radius 10; grain 0.07 }
@@ -51,7 +53,6 @@ tokens {
     ghost { stroke #96794A; stroke-w 1; radius 10 }
   }
   shadow {
-    card 0,12,32,#3A2A1466
     well inset,0,2,8,#6E52303D
     lift 0,10,26,#8E242647
   }
@@ -138,7 +139,7 @@ col key=page w=fill gap=14 {
   // option overlays are siblings AFTER it, so they paint above the actions
   // row and never contribute to the card's hug height.
   stack key=card w=fill {
-    col key=flow w=fill pad=18 gap=14 style=fx.card shadow=shadow.card {
+    col key=flow w=fill pad=18 gap=14 style=fx.card {
       // Toolbar head: the kicker on the left, the share status on the right.
       row key=head w=fill align=center gap=12 {
         text param.title style=text.kicker color=color.ochre w=fill
@@ -261,7 +262,7 @@ col key=page w=fill gap=14 {
   }
 
   when error_shown {
-    col key=failure w=fill pad=16 gap=6 style=fx.card shadow=shadow.card {
+    col key=failure w=fill pad=16 gap=6 style=fx.card {
       text "THE FORGE COULD NOT FINISH" style=text.label color=color.wax
       text param.error style=text.field color=color.ink w=fill
     }
