@@ -38,7 +38,7 @@ tokens {
     label  { family "Cinzel"; size 12; weight 700; tracking 1.6 }
     opt    { family "Eagle Lake"; size 16; weight 400 }
     field  { family "Eagle Lake"; size 15; weight 400 }
-    button { family "Cinzel"; size 14; weight 700; tracking 1.8 }
+    button { family "Cinzel"; size 13; weight 700; tracking 1.8 }
     level  { family "Cinzel"; size 17; weight 700 }
     hint   { family "Cinzel"; size 12; weight 700; tracking 1.2 }
   }
@@ -48,7 +48,7 @@ tokens {
     card  { bg linear(180, #F4EBD469 0%, #EADDBA60 100%); radius 4; grain 0.05 }
     well  { bg radial(#E4D2A6E6 0%, #D8C294DE 100%); stroke #96794A; stroke-w 1; radius 6; grain 0.11 }
     step  { bg none; stroke #96794A; stroke-w 1; radius 4 }
-    button { bg linear(180, #B5352F 0%, #7E1F1C 100%); radius 4 }
+    button { bg #9E2B25; radius 4 }
     ghost { stroke #96794A; stroke-w 1; radius 4 }
   }
   shadow {
@@ -189,7 +189,7 @@ col key=page w=fill gap=14 {
         when !busy {
           row w=hug h=44 pad=0,24 style=fx.button shadow=shadow.lift act=generate \
               align=center transition=160,ease-out {
-            when hover { bg=linear(180, #C4403A 0%, #8E2426 100%) scale=1.04 }
+            when hover { bg=color.waxDeep scale=1.04 }
             when pressed { opacity=0.85 }
             when focus-visible { stroke=color.ochre stroke-w=3 stroke-align=inside }
             text "GENERATE" style=text.button color=#F4ECD8 nowrap
