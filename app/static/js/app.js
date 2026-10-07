@@ -18,7 +18,7 @@
 (() => {
     'use strict';
 
-    const SLAB_VERSION = '42';
+    const SLAB_VERSION = '43';
     // Detail marks (clouds/splotches/fibers/flecks) scattered on
     // <gl-parchment> each load — must match DETAIL in parchment.slab.
     const PARCHMENT_MARKS = 244;
@@ -47,8 +47,8 @@
         const host = document.querySelector('gl-parchment');
         if (!host) return;
         // Remount per creation: a fresh element rebuilds the slab ground
-        // and replays the settle animation, so the parchment is visibly
-        // drawn anew together with the sheet — never a stale backdrop.
+        // from the seed — never a stale backdrop. Entrance runs below
+        // as real WAAPI, since slab `animate` never binds on clones.
         // Params land on the DETACHED clone before it mounts, so the
         // build bakes the seed rather than catching up later.
         const parchment = host.cloneNode(false);
@@ -92,8 +92,17 @@
             parchment['d' + i + 'x'] = rand(-240, vw - 40);
             parchment['d' + i + 'y'] = rand(-160, vh - 40);
         }
-        // Mount only now, fully seeded: build bakes the `when` lottery.
+        // Mount only now, fully seeded: build bakes the seed.
         host.replaceWith(parchment);
+        // Genesis: the ground develops in front of the user. Slab
+        // `animate` never binds on cloned mounts (measured: zero
+        // Animation objects post-clone), so the entrance runs as
+        // real WAAPI on the host — ~0.9s, decorative, never blocking.
+        try {
+            if (typeof parchment.animate === 'function')
+                parchment.animate([{ opacity: 0 }, { opacity: 1 }],
+                    { duration: 900, easing: 'ease-out', fill: 'both' });
+        } catch (e) { /* decorative; never block the sheet */ }
     }
     const FONTS = [
         ['Cinzel', '/static/fonts/slab-cinzel-700.ttf'],
