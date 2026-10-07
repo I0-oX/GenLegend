@@ -18,7 +18,7 @@
 (() => {
     'use strict';
 
-    const SLAB_VERSION = '41';
+    const SLAB_VERSION = '42';
     // Detail marks (clouds/splotches/fibers/flecks) scattered on
     // <gl-parchment> each load — must match DETAIL in parchment.slab.
     const PARCHMENT_MARKS = 244;

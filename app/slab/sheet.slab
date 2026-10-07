@@ -45,8 +45,7 @@ tokens {
   fx {
     // Ruled wash, not a floating card: the ground reads through, the
     // form is written on the same page the sheet is.
-    card  { bg linear(180, #F4EBD469 0%, #EADDBA60 100%); stroke #96794A; stroke-w 1; radius 4; grain 0.05 }
-    field { bg none; stroke #96794A; stroke-w 1; radius 4 }
+    card  { bg linear(180, #F4EBD469 0%, #EADDBA60 100%); radius 4; grain 0.05 }
     well  { bg radial(#E4D2A6E6 0%, #D8C294DE 100%); stroke #96794A; stroke-w 1; radius 6; grain 0.11 }
     step  { bg none; stroke #96794A; stroke-w 1; radius 4 }
     button { bg linear(180, #B5352F 0%, #7E1F1C 100%); radius 4 }
@@ -98,20 +97,23 @@ def Option(name="", picked=false) export {
   }
 }
 
-// One selector: label and the picked value in a well. The option list is an
-// anchored overlay at the card level (§6.10) so opening it does NOT grow
-// the toolbar — attach= points at this field row's stable node key.
+// One selector: label, then the picked value written on a ruled line of
+// the page — no box around it. The option list is an anchored overlay at
+// the card level (§6.10) so opening it does NOT grow the toolbar —
+// attach= points at this field row's stable node key.
 def Selector(caption, value, action) {
-  col key=sel w=fill gap=5 {
+  col key=sel w=fill gap=4 {
     text caption style=text.label color=color.inkSoft
-    row key=field w=fill h=44 pad=0,12 gap=8 align=center style=fx.field \
+    row key=field w=fill h=34 pad=0,2 gap=8 align=center \
         act=action transition=160,ease-out {
-      when hover { bg=color.raised stroke=color.ochre stroke-w=1.5 }
+      when hover { bg=color.raised }
       when pressed { opacity=0.85 }
-      when focus-visible { stroke=color.ochre stroke-w=2 stroke-align=inside }
+      when focus-visible { bg=color.raised stroke=color.ochre stroke-w=2 stroke-align=inside }
       text value style=text.opt color=color.ink w=fill ellipsis nowrap
       text "▾" style=text.opt color=color.ochre
     }
+    // the writing line — the value sits ON the papyrus
+    rect w=fill h=1 bg=color.line opacity=0.9
   }
 }
 

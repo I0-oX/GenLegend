@@ -47,7 +47,8 @@ tokens {
   fx {
     // A ruled wash, not a card: the ground's mottle reads through, the
     // ink sits on the same page the rest of the sheet is written on.
-    panel   { bg linear(180, #F3EAD369 0%, #EBDFBB60 100%); stroke #96794A; stroke-w 1; radius 4; grain 0.05 }
+    // No outer stroke — sections are ruled by their inner hairlines.
+    panel   { bg linear(180, #F3EAD369 0%, #EBDFBB60 100%); radius 4; grain 0.05 }
   }
 }
 
